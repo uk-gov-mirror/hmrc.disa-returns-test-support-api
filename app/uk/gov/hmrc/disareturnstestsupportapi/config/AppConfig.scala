@@ -25,5 +25,6 @@ class AppConfig @Inject() (config: ServicesConfig) {
 
   lazy val disaReturnsBaseUrl:      String = config.baseUrl("disa-returns")
   lazy val disaReturnsStubsBaseUrl: String = config.baseUrl("disa-returns-stubs")
+  lazy val reportIssueLimit:        Int    = config.getInt("reportIssueLimit")
 
 }

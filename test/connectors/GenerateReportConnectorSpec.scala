@@ -82,10 +82,10 @@ class GenerateReportConnectorSpec extends BaseUnitSpec {
 
     "return IssueLimitExceeded when the response status is 400 with code ISSUE_LIMIT_EXCEEDED" in new TestSetup {
       val responseBody: String =
-        """
+        s"""
           |{
           |  "code": "ISSUE_LIMIT_EXCEEDED",
-          |  "message": "Maximum of 2000 issues allowed per report"
+          |  "message": "Maximum of ${mockAppConfig.reportIssueLimit} issues allowed per report"
           |}
           |""".stripMargin
 

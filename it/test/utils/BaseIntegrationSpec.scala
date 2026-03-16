@@ -25,6 +25,7 @@ import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.WSClient
 import play.api.test.DefaultAwaitTimeout
+import uk.gov.hmrc.disareturnstestsupportapi.config.AppConfig
 import uk.gov.hmrc.http.HeaderCarrier
 import utils.WiremockHelper._
 
@@ -75,4 +76,5 @@ trait BaseIntegrationSpec
   implicit val mat:              Materializer     = app.injector.instanceOf[Materializer]
   implicit val ws:               WSClient         = app.injector.instanceOf[WSClient]
   implicit val executionContext: ExecutionContext = app.injector.instanceOf[ExecutionContext]
+  implicit val appConfig:        AppConfig        = app.injector.instanceOf[AppConfig]
 }

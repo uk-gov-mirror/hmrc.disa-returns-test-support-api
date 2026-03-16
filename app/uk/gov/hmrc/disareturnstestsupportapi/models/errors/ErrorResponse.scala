@@ -66,13 +66,19 @@ object InternalServerErr {
 }
 
 case class IssueLimitExceeded(
-  code: String = "ISSUE_LIMIT_EXCEEDED",
-  message: String =
-    "The maximum number of issues that can be generated in a single report is 2000. Please reduce the number of requested issues to be generated and try again."
+  code:    String = "ISSUE_LIMIT_EXCEEDED",
+  message: String
 )
 
 object IssueLimitExceeded {
+
   implicit val format: OFormat[IssueLimitExceeded] = Json.format[IssueLimitExceeded]
+
+  def apply(limit: Int): IssueLimitExceeded =
+    IssueLimitExceeded(
+      message =
+        s"The maximum number of issues that can be generated in a single report is $limit. Please reduce the number of requested issues to be generated and try again."
+    )
 }
 
 case class UnauthorisedErr(code: String = "UNAUTHORIZED", message: String = "Unauthorized")

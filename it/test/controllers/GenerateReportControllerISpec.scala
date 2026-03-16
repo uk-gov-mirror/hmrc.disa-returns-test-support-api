@@ -222,9 +222,8 @@ class GenerateReportControllerISpec extends BaseIntegrationSpec {
 
       result.status                     shouldBe BAD_REQUEST
       (result.json \ "code").as[String] shouldBe "ISSUE_LIMIT_EXCEEDED"
-      (result.json \ "message").as[String] should include(
-        "The maximum number of issues that can be generated in a single report is 2000. Please reduce the number of requested issues to be generated and try again."
-      )
+      (result.json \ "message").as[String] shouldBe
+        s"The maximum number of issues that can be generated in a single report is ${appConfig.reportIssueLimit}. Please reduce the number of requested issues to be generated and try again."
     }
 
     "return 401 UNAUTHORIZED when zref doesn't match enrolment" in {

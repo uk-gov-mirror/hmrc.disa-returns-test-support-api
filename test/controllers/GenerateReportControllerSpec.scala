@@ -158,7 +158,7 @@ class GenerateReportControllerSpec extends BaseUnitSpec {
       val json = contentAsJson(result)
       (json \ "code").as[String] shouldBe "ISSUE_LIMIT_EXCEEDED"
       (json \ "message").as[String] should include(
-        "The maximum number of issues that can be generated in a single report is 2000. Please reduce the number of requested issues to be generated and try again."
+        s"The maximum number of issues that can be generated in a single report is ${mockAppConfig.reportIssueLimit}. Please reduce the number of requested issues to be generated and try again."
       )
     }
 
