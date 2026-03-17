@@ -190,8 +190,6 @@ class GenerateReportControllerISpec extends BaseIntegrationSpec {
     }
 
     "return 400 BadRequest when validation fails when an empty request body is submitted" in {
-      val emptyPayload = ""
-
       stubAuth()
       stubGenerateReport(noContent, zRef, year, month)
       stubCallback(noContent, zRef, year, month)
@@ -208,6 +206,24 @@ class GenerateReportControllerISpec extends BaseIntegrationSpec {
       (result.json \ "code").as[String] shouldBe "EMPTY_PAYLOAD"
       (result.json \ "message")
         .as[String] shouldBe "The payload is empty. Please ensure the request body contains a valid JSON payload before resubmitting."
+    }
+
+    "return 400 BadRequest when the record limit is exceeded" in {
+      stubAuth()
+      stubGenerateReport(
+        badRequest(),
+        zRef,
+        year,
+        month,
+        Some("""{"code":"ISSUE_LIMIT_EXCEEDED","message":"You have exceeded the maximum allowed issues per reconciliation report"}""")
+      )
+
+      val result = generateRequest(zRef = zRef, year = year, month = month, body = validParsedJson)
+
+      result.status                     shouldBe BAD_REQUEST
+      (result.json \ "code").as[String] shouldBe "ISSUE_LIMIT_EXCEEDED"
+      (result.json \ "message").as[String] shouldBe
+        s"The maximum number of issues that can be generated in a single report is ${appConfig.reportIssueLimit}. Please reduce the number of requested issues to be generated and try again."
     }
 
     "return 401 UNAUTHORIZED when zref doesn't match enrolment" in {

@@ -79,5 +79,21 @@ class GenerateReportConnectorSpec extends BaseUnitSpec {
 
       result shouldBe GenerateReportResult.Failure
     }
+
+    "return IssueLimitExceeded when the response status is 400 with code ISSUE_LIMIT_EXCEEDED" in new TestSetup {
+      val responseBody: String =
+        s"""
+          |{
+          |  "code": "ISSUE_LIMIT_EXCEEDED",
+          |  "message": "Maximum of ${mockAppConfig.reportIssueLimit} issues allowed per report"
+          |}
+          |""".stripMargin
+
+      val httpResponse: HttpResponse = HttpResponse(400, responseBody)
+      when(mockRequestBuilder.execute[HttpResponse](any(), any())).thenReturn(Future.successful(httpResponse))
+
+      val result: GenerateReportResult = connector.generateReport(body, zref, year, month).futureValue
+      result shouldBe GenerateReportResult.IssueLimitExceeded
+    }
   }
 }

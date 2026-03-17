@@ -41,6 +41,7 @@ class GenerateReportService @Inject() (
     generateReportConnector
       .generateReport(req, zRef, year, month)
       .flatMap {
+
         case GenerateReportResult.Success =>
           callbackConnector
             .callback(zRef, year, month, req.totalRecords)
@@ -57,6 +58,12 @@ class GenerateReportService @Inject() (
                 )
                 GenerateReportResult.Failure
             }
+
+        case GenerateReportResult.IssueLimitExceeded =>
+          logger.warn(
+            s"[GenerateReportService] Record limit exceeded zRef=$zRef year=$year month=$month"
+          )
+          Future.successful(GenerateReportResult.IssueLimitExceeded)
 
         case GenerateReportResult.Failure =>
           logger.error(

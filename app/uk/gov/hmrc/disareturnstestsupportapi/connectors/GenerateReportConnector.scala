@@ -47,7 +47,16 @@ class GenerateReportConnector @Inject() (config: AppConfig, httpClient: HttpClie
       .map { response =>
         response.status match {
           case 204 => GenerateReportResult.Success
-          case _   => GenerateReportResult.Failure
+          case 400 =>
+            val code =
+              (Json.parse(response.body) \ "code").asOpt[String]
+            code match {
+              case Some("ISSUE_LIMIT_EXCEEDED") =>
+                GenerateReportResult.IssueLimitExceeded
+              case _ =>
+                GenerateReportResult.Failure
+            }
+          case _ => GenerateReportResult.Failure
         }
       }
   }

@@ -20,7 +20,6 @@ sealed trait GenerateReportResult
 
 object GenerateReportResult {
   case object Success extends GenerateReportResult
-
   case object Failure extends GenerateReportResult
-
+  case object IssueLimitExceeded extends GenerateReportResult
 }

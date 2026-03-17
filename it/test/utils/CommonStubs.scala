@@ -24,7 +24,8 @@ import play.api.http.Status.OK
 trait CommonStubs {
 
   def stubAuth(zRef: String = "Z1234"): Unit = {
-    val validEnrolment = s"""{
+    val validEnrolment =
+      s"""{
       "authorisedEnrolments": [{
         "key": "HMRC-DISA-ORG",
         "identifiers": [{ "key": "ZREF", "value": "$zRef" }],
@@ -50,11 +51,24 @@ trait CommonStubs {
         }
     }
 
-  def stubGenerateReport(status: ResponseDefinitionBuilder, zRef: String, year: String, month: String): Unit =
+  def stubGenerateReport(
+    status:       ResponseDefinitionBuilder,
+    zRef:         String,
+    year:         String,
+    month:        String,
+    responseBody: Option[String] = None
+  ): Unit = {
+
+    val responseWithBody = responseBody match {
+      case Some(body) => status.withBody(body)
+      case None       => status
+    }
+
     stubFor(
       post(urlEqualTo(s"/test-only/$zRef/$year/$month/reconciliation"))
-        .willReturn(status)
+        .willReturn(responseWithBody)
     )
+  }
 
   def stubCallback(status: ResponseDefinitionBuilder, zRef: String, year: String, month: String): Unit =
     stubFor(

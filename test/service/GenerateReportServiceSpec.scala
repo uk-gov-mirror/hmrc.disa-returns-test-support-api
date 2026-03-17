@@ -107,5 +107,33 @@ class GenerateReportServiceSpec extends BaseUnitSpec {
 
       thrown shouldBe ex
     }
+
+    "return IssueLimitExceeded when generate reports hits the record limit" in {
+      when(mockGenerateReportConnector.generateReport(request, zRef, year, month))
+        .thenReturn(Future.successful(GenerateReportResult.IssueLimitExceeded))
+
+      val result = service.generateReport(request, zRef, year, month).futureValue
+
+      result shouldBe GenerateReportResult.IssueLimitExceeded
+
+      verify(mockDisaReturnsCallbackConnector, never())
+        .callback(any[String], any[String], any[String], any[Int])(any[HeaderCarrier])
+    }
+
+    "return IssueLimitExceeded even if callback connector would have thrown" in {
+      when(mockGenerateReportConnector.generateReport(request, zRef, year, month))
+        .thenReturn(Future.successful(GenerateReportResult.IssueLimitExceeded))
+
+      val ex = new RuntimeException("Callback boom!")
+      when(mockDisaReturnsCallbackConnector.callback(zRef, year, month, request.totalRecords))
+        .thenReturn(Future.failed(ex))
+
+      val result = service.generateReport(request, zRef, year, month).futureValue
+
+      result shouldBe GenerateReportResult.IssueLimitExceeded
+
+      verify(mockDisaReturnsCallbackConnector, never())
+        .callback(any[String], any[String], any[String], any[Int])(any[HeaderCarrier])
+    }
   }
 }

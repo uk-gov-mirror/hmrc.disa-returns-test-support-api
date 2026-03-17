@@ -19,6 +19,7 @@ package uk.gov.hmrc.disareturnstestsupportapi.controllers
 import play.api.Logging
 import play.api.libs.json.Json
 import play.api.mvc._
+import uk.gov.hmrc.disareturnstestsupportapi.config.AppConfig
 import uk.gov.hmrc.disareturnstestsupportapi.controllers.actions.AuthAction
 import uk.gov.hmrc.disareturnstestsupportapi.models.GenerateReportRequest
 import uk.gov.hmrc.disareturnstestsupportapi.models.common._
@@ -35,7 +36,8 @@ class GenerateReportController @Inject() (
   cc:                    ControllerComponents,
   authAction:            AuthAction,
   requestParser:         RequestParser,
-  generateReportService: GenerateReportService
+  generateReportService: GenerateReportService,
+  appConfig:             AppConfig
 )(implicit ec:           ExecutionContext)
     extends AbstractController(cc)
     with Logging {
@@ -63,7 +65,8 @@ class GenerateReportController @Inject() (
                       .map {
                         case GenerateReportResult.Success =>
                           NoContent
-
+                        case GenerateReportResult.IssueLimitExceeded =>
+                          BadRequest(Json.toJson(IssueLimitExceeded(appConfig.reportIssueLimit)))
                         case GenerateReportResult.Failure =>
                           InternalServerError(Json.toJson(InternalServerErr()))
                       }

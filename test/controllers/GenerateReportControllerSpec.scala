@@ -141,6 +141,27 @@ class GenerateReportControllerSpec extends BaseUnitSpec {
       )
     }
 
+    "return 400 BadRequest when the issue limit is exceeded" in {
+      authorizationForZRef()
+
+      when(mockGenerateReportConnector.generateReport(any(), any(), any(), any())(any()))
+        .thenReturn(Future.successful(GenerateReportResult.IssueLimitExceeded))
+
+      val request = FakeRequest(POST, s"/generate/$zRef/$year/$month")
+        .withBody(AnyContentAsJson(validJson))
+        .withHeaders("Content-Type" -> "application/json")
+
+      val result = controller.generateReport(zRef, year, month)(request)
+
+      status(result) shouldBe BAD_REQUEST
+
+      val json = contentAsJson(result)
+      (json \ "code").as[String] shouldBe "ISSUE_LIMIT_EXCEEDED"
+      (json \ "message").as[String] should include(
+        s"The maximum number of issues that can be generated in a single report is ${mockAppConfig.reportIssueLimit}. Please reduce the number of requested issues to be generated and try again."
+      )
+    }
+
     "return 500 InternalServerError when generateReport throws an exception (recover block)" in {
       authorizationForZRef()
       when(mockGenerateReportConnector.generateReport(any(), any(), any(), any())(any()))
