@@ -19,21 +19,16 @@ package uk.gov.hmrc.disareturnstestsupportapi.utils
 import play.api.libs.json._
 import play.api.mvc.Results.BadRequest
 import play.api.mvc._
-import uk.gov.hmrc.disareturnstestsupportapi.models.errors.{EmptyPayload, ValidationFailureResponse}
+import uk.gov.hmrc.disareturnstestsupportapi.models.errors.ValidationFailureResponse
 
 import javax.inject.{Inject, Singleton}
 
 @Singleton
-class RequestParser @Inject() (cc: ControllerComponents) {
+class RequestParser @Inject() () {
 
-  def parseJson[T: Reads](request: Request[AnyContent]): Either[Result, T] =
-    request.body.asJson match {
-      case None =>
-        Left(BadRequest(Json.toJson(EmptyPayload())))
-      case Some(js) =>
-        js.validate[T].asEither.left.map { errors =>
-          val jsErrors = ValidationFailureResponse.createFromJsError(JsError(errors))
-          BadRequest(Json.toJson(jsErrors))
-        }
+  def parseJson[T: Reads](json: JsValue): Either[Result, T] =
+    json.validate[T].asEither.left.map { errors =>
+      val jsErrors = ValidationFailureResponse.createFromJsError(JsError(errors))
+      BadRequest(Json.toJson(jsErrors))
     }
 }

@@ -117,6 +117,7 @@ paths:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/badSubmissionGeneral'
+                  - $ref: '#/components/schemas/badSubmissionComplex'
                   - $ref: '#/components/schemas/badRequestParametersMultipleErrors'
         401:
           description: Unauthorized
@@ -222,6 +223,56 @@ components:
       example:
         code: EMPTY_PAYLOAD
         message: "The payload is empty. Please ensure the request body contains a valid JSON payload before resubmitting."
+    badSubmissionComplex:
+      title: Bad Request (Field Specific)
+      type: object
+      properties:
+        code:
+          title: Validation Failure
+          type: string
+          description: Code indicating the type of error.
+          enum:
+            - VALIDATION_FAILURE
+        message:
+          title: Message
+          type: string
+          description: Human-readable message outlining the error.
+          example: "Bad request"
+        errors:
+          title: Errors
+          type: array
+          description: Array of errors outlining issues found in the request body.
+          items:
+            anyOf:
+              - $ref: '#/components/schemas/badSubmissionComplexChild'
+      example:
+        code: VALIDATION_FAILURE
+        message: Bad request
+        errors:
+          - code: MISSING_FIELD
+            message: This field is required
+            path: /oversubscribed
+    badSubmissionComplexChild:
+      title: Bad Request Item
+      type: object
+      properties:
+        code:
+          title: Validation Failure
+          type: string
+          description: Code indicating the type of error.
+          enum:
+            - MISSING_FIELD
+            - VALIDATION_ERROR
+        message:
+          title: Message
+          type: string
+          description: Human-readable message outlining the error.
+          example: "This field is required"
+        path:
+          title: Path
+          type: string
+          description: JSON pointer path to the field that failed validation.
+          example: /oversubscribed
     invalidTaxYear:
       title: Invalid Tax Year
       type: object

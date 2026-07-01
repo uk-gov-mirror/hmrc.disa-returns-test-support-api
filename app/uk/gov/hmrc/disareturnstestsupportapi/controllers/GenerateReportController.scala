@@ -17,10 +17,11 @@
 package uk.gov.hmrc.disareturnstestsupportapi.controllers
 
 import play.api.Logging
-import play.api.libs.json.Json
+import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
 import uk.gov.hmrc.disareturnstestsupportapi.config.AppConfig
 import uk.gov.hmrc.disareturnstestsupportapi.controllers.actions.AuthAction
+import uk.gov.hmrc.disareturnstestsupportapi.controllers.parsers.StrictJsonBodyParser
 import uk.gov.hmrc.disareturnstestsupportapi.models.GenerateReportRequest
 import uk.gov.hmrc.disareturnstestsupportapi.models.common._
 import uk.gov.hmrc.disareturnstestsupportapi.models.errors._
@@ -35,6 +36,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class GenerateReportController @Inject() (
   cc:                    ControllerComponents,
   authAction:            AuthAction,
+  strictJsonBodyParser:  StrictJsonBodyParser,
   requestParser:         RequestParser,
   generateReportService: GenerateReportService,
   appConfig:             AppConfig
@@ -42,11 +44,11 @@ class GenerateReportController @Inject() (
     extends AbstractController(cc)
     with Logging {
 
-  def generateReport(zRef: String, year: String, month: String): Action[AnyContent] =
-    Action.async { implicit request =>
+  def generateReport(zRef: String, year: String, month: String): Action[JsValue] =
+    Action.async(strictJsonBodyParser) { implicit request =>
       implicit val hc: HeaderCarrier =
         HeaderCarrierConverter.fromRequest(request)
-      requestParser.parseJson[GenerateReportRequest](request) match {
+      requestParser.parseJson[GenerateReportRequest](request.body) match {
         case Left(errorResult) =>
           Future.successful(errorResult)
 
@@ -59,7 +61,7 @@ class GenerateReportController @Inject() (
               authAction(validZRef)
                 .invokeBlock(
                   request,
-                  { _: Request[AnyContent] =>
+                  { _: Request[JsValue] =>
                     generateReportService
                       .generateReport(req, validZRef, y, m)
                       .map {

@@ -116,11 +116,13 @@ class GenerateReportControllerISpec extends BaseIntegrationSpec {
 
       result.status shouldBe BAD_REQUEST
 
-      (result.json \ "code").as[String]    shouldBe "BAD_REQUEST"
-      (result.json \ "message").as[String] shouldBe "Issue(s) with your request"
+      (result.json \ "code").as[String]    shouldBe "VALIDATION_FAILURE"
+      (result.json \ "message").as[String] shouldBe "Bad request"
 
-      val errors = (result.json \ "issues").as[Seq[JsValue]]
-      errors.map(e => (e \ "oversubscribed").as[String]).head shouldBe "This field is required"
+      val errors = (result.json \ "errors").as[Seq[JsValue]]
+      (errors.head \ "code").as[String]    shouldBe "MISSING_FIELD"
+      (errors.head \ "message").as[String] shouldBe "This field is required"
+      (errors.head \ "path").as[String]    shouldBe "/oversubscribed"
 
     }
     "return 400 BadRequest for invalid oversubscribed field when the value is less than zero" in {
@@ -138,11 +140,13 @@ class GenerateReportControllerISpec extends BaseIntegrationSpec {
 
       result.status shouldBe BAD_REQUEST
 
-      (result.json \ "code").as[String]    shouldBe "BAD_REQUEST"
-      (result.json \ "message").as[String] shouldBe "Issue(s) with your request"
+      (result.json \ "code").as[String]    shouldBe "VALIDATION_FAILURE"
+      (result.json \ "message").as[String] shouldBe "Bad request"
 
-      val errors = (result.json \ "issues").as[Seq[JsValue]]
-      errors.map(e => (e \ "oversubscribed").as[String]).head shouldBe "This field must be greater than or equal to 0"
+      val errors = (result.json \ "errors").as[Seq[JsValue]]
+      (errors.head \ "code").as[String]    shouldBe "VALIDATION_ERROR"
+      (errors.head \ "message").as[String] shouldBe "This field must be greater than or equal to 0"
+      (errors.head \ "path").as[String]    shouldBe "/oversubscribed"
 
     }
 
@@ -194,18 +198,37 @@ class GenerateReportControllerISpec extends BaseIntegrationSpec {
       stubGenerateReport(noContent, zRef, year, month)
       stubCallback(noContent, zRef, year, month)
 
-      val result = await(
-        ws.url(
-          s"http://localhost:$port/monthly/$zRef/$year/$month/reconciliation"
-        ).withHttpHeaders("Authorization" -> "Bearer 1234")
-          .withFollowRedirects(follow = false)
-          .post("")
-      )
+      val result = generateRawRequest(zRef = zRef, year = year, month = month, body = "")
 
       result.status                     shouldBe BAD_REQUEST
       (result.json \ "code").as[String] shouldBe "EMPTY_PAYLOAD"
       (result.json \ "message")
         .as[String] shouldBe "The payload is empty. Please ensure the request body contains a valid JSON payload before resubmitting."
+    }
+
+    "return 400 BadRequest when validation fails when a whitespace request body is submitted" in {
+      stubAuth()
+      stubGenerateReport(noContent, zRef, year, month)
+      stubCallback(noContent, zRef, year, month)
+
+      val result = generateRawRequest(zRef = zRef, year = year, month = month, body = "   \n\t  ")
+
+      result.status                     shouldBe BAD_REQUEST
+      (result.json \ "code").as[String] shouldBe "EMPTY_PAYLOAD"
+      (result.json \ "message")
+        .as[String] shouldBe "The payload is empty. Please ensure the request body contains a valid JSON payload before resubmitting."
+    }
+
+    "return 400 BadRequest when malformed JSON is submitted" in {
+      stubAuth()
+      stubGenerateReport(noContent, zRef, year, month)
+      stubCallback(noContent, zRef, year, month)
+
+      val result = generateRawRequest(zRef = zRef, year = year, month = month, body = """{"oversubscribed": MALFORMED}""")
+
+      result.status                        shouldBe BAD_REQUEST
+      (result.json \ "code").as[String]    shouldBe "MALFORMED_JSON"
+      (result.json \ "message").as[String] shouldBe "Request body contains malformed JSON"
     }
 
     "return 400 BadRequest when the record limit is exceeded" in {
@@ -247,6 +270,22 @@ class GenerateReportControllerISpec extends BaseIntegrationSpec {
         s"http://localhost:$port/monthly/$zRef/$year/$month/reconciliation"
       ).withHttpHeaders("Authorization" -> "Bearer 1234")
         .withFollowRedirects(follow = false)
+        .post(body)
+    )
+
+  def generateRawRequest(
+    zRef:  String,
+    year:  String,
+    month: String,
+    body:  String
+  ): WSResponse =
+    await(
+      ws.url(
+        s"http://localhost:$port/monthly/$zRef/$year/$month/reconciliation"
+      ).withHttpHeaders(
+        "Authorization" -> "Bearer 1234",
+        "Content-Type"  -> "application/json"
+      ).withFollowRedirects(follow = false)
         .post(body)
     )
 }

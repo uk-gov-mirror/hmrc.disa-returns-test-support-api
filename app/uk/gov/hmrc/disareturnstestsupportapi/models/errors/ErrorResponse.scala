@@ -56,6 +56,15 @@ object EmptyPayload {
   implicit val format: OFormat[EmptyPayload] = Json.format[EmptyPayload]
 }
 
+case class MalformedJsonFailureErr(
+  code:    String = "MALFORMED_JSON",
+  message: String = "Request body contains malformed JSON"
+)
+
+object MalformedJsonFailureErr {
+  implicit val format: OFormat[MalformedJsonFailureErr] = Json.format[MalformedJsonFailureErr]
+}
+
 case class InternalServerErr(
   code:    String = "INTERNAL_SERVER_ERROR",
   message: String = "There has been an issue processing your request"
@@ -98,35 +107,60 @@ object MultipleErrorResponse {
 }
 
 case class ValidationFailureResponse(
-  code:    String = "BAD_REQUEST",
-  message: String = "Issue(s) with your request",
-  issues:  Seq[Map[String, String]]
+  code:    String = "VALIDATION_FAILURE",
+  message: String = "Bad request",
+  errors:  Seq[FieldValidationError]
 )
 
 object ValidationFailureResponse {
   implicit val responseFormat: OFormat[ValidationFailureResponse] = Json.format[ValidationFailureResponse]
 
-  private def formatFieldPath(jsPath: JsPath): String =
-    jsPath.path
+  private def mapJsErrorToResponseCode(message: String): String = message match {
+    case "error.path.missing" => "MISSING_FIELD"
+    case _                    => "VALIDATION_ERROR"
+  }
+
+  private def formatFieldPath(jsPath: JsPath): String = {
+    val pathString = jsPath.path
       .map {
-        case KeyPathNode(key) => key
-        case IdxPathNode(idx) => idx.toString
+        case KeyPathNode(key)     => s"/$key"
+        case IdxPathNode(idx)     => s"/$idx"
+        case RecursiveSearch(key) => s"//$key"
       }
-      .mkString(".")
+      .mkString("")
+
+    if (pathString.isEmpty) "/" else pathString
+  }
 
   private def mapJsErrorMessage(message: String): String = message match {
-    case "error.min" => "This field must be greater than or equal to 0"
-    case _           => "This field is required"
+    case "error.path.missing"      => "This field is required"
+    case "error.min"               => "This field must be greater than or equal to 0"
+    case "error.expected.jsnumber" => "This field must be greater than or equal to 0"
+    case other                     => other
   }
 
   def createFromJsError(jsError: JsError): ValidationFailureResponse = {
-    val issues: Seq[Map[String, String]] = jsError.errors.toSeq.flatMap { case (path, errors) =>
+    val fieldErrors: Seq[FieldValidationError] = jsError.errors.toSeq.flatMap { case (path, errors) =>
       errors.map { validationError =>
-        Map(formatFieldPath(path) -> mapJsErrorMessage(validationError.message))
+        FieldValidationError(
+          code = mapJsErrorToResponseCode(validationError.message),
+          message = mapJsErrorMessage(validationError.message),
+          path = formatFieldPath(path)
+        )
       }
     }
 
-    ValidationFailureResponse(issues = issues)
+    ValidationFailureResponse(errors = fieldErrors)
   }
 
+}
+
+case class FieldValidationError(
+  code:    String,
+  message: String,
+  path:    String
+)
+
+object FieldValidationError {
+  implicit val format: OFormat[FieldValidationError] = Json.format[FieldValidationError]
 }

@@ -20,7 +20,6 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import play.api.http.Status.{BAD_REQUEST, INTERNAL_SERVER_ERROR, NO_CONTENT, UNAUTHORIZED}
 import play.api.libs.json.{JsObject, JsValue, Json}
-import play.api.mvc.{AnyContentAsEmpty, AnyContentAsJson}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.{POST, contentAsJson, status}
 import uk.gov.hmrc.disareturnstestsupportapi.controllers.GenerateReportController
@@ -52,7 +51,7 @@ class GenerateReportControllerSpec extends BaseUnitSpec {
         .thenReturn(Future.successful(CallbackResponse.Success))
 
       val request = FakeRequest(POST, s"/generate/$zRef/$year/$month")
-        .withBody(AnyContentAsJson(validJson))
+        .withBody(validJson)
         .withHeaders("Content-Type" -> "application/json")
 
       val result = controller.generateReport(zRef, year, month)(request)
@@ -68,7 +67,7 @@ class GenerateReportControllerSpec extends BaseUnitSpec {
         .thenReturn(Future.successful(CallbackResponse.Success))
 
       val request = FakeRequest(POST, s"/generate/$zRef/$year/$month")
-        .withBody(AnyContentAsJson(validJson))
+        .withBody(validJson)
         .withHeaders("Content-Type" -> "application/json")
 
       val result = controller.generateReport(zRef, year, month)(request)
@@ -82,7 +81,7 @@ class GenerateReportControllerSpec extends BaseUnitSpec {
         .thenReturn(Future.successful(GenerateReportResult.Failure))
 
       val request = FakeRequest(POST, s"/generate/$zRef/$year/$month")
-        .withBody(AnyContentAsJson(validJson))
+        .withBody(validJson)
         .withHeaders("Content-Type" -> "application/json")
 
       val result = controller.generateReport(zRef, year, month)(request)
@@ -100,7 +99,7 @@ class GenerateReportControllerSpec extends BaseUnitSpec {
         .thenReturn(Future.successful(CallbackResponse.Failure))
 
       val request = FakeRequest(POST, s"/generate/$zRef/$year/$month")
-        .withBody(AnyContentAsJson(validJson))
+        .withBody(validJson)
         .withHeaders("Content-Type" -> "application/json")
 
       val result = controller.generateReport(zRef, year, month)(request)
@@ -117,7 +116,7 @@ class GenerateReportControllerSpec extends BaseUnitSpec {
       authorizationForZRef(invalidzRef)
 
       val request = FakeRequest(POST, s"/generate/$invalidzRef/$invalidYear/$invalidMonth")
-        .withBody(AnyContentAsJson(validJson))
+        .withBody(validJson)
         .withHeaders("Content-Type" -> "application/json")
 
       val result = controller.generateReport(invalidzRef, invalidYear, invalidMonth)(request)
@@ -148,7 +147,7 @@ class GenerateReportControllerSpec extends BaseUnitSpec {
         .thenReturn(Future.successful(GenerateReportResult.IssueLimitExceeded))
 
       val request = FakeRequest(POST, s"/generate/$zRef/$year/$month")
-        .withBody(AnyContentAsJson(validJson))
+        .withBody(validJson)
         .withHeaders("Content-Type" -> "application/json")
 
       val result = controller.generateReport(zRef, year, month)(request)
@@ -168,7 +167,7 @@ class GenerateReportControllerSpec extends BaseUnitSpec {
         .thenReturn(Future.failed(new RuntimeException("fail")))
 
       val request = FakeRequest(POST, s"/generate/$zRef/$year/$month")
-        .withBody(AnyContentAsJson(validJson))
+        .withBody(validJson)
         .withHeaders("Content-Type" -> "application/json")
 
       val result = controller.generateReport(zRef, year, month)(request)
@@ -177,22 +176,6 @@ class GenerateReportControllerSpec extends BaseUnitSpec {
       (contentAsJson(result) \ "code").as[String]    shouldBe "INTERNAL_SERVER_ERROR"
       (contentAsJson(result) \ "message").as[String] shouldBe "There has been an issue processing your request"
     }
-  }
-
-  "return 400 BadRequest with EmptyPayload when payload is empty" in {
-    authorizationForZRef()
-
-    val request = FakeRequest(POST, s"/generate/$zRef/$year/$month")
-      .withBody(AnyContentAsEmpty)
-      .withHeaders("Content-Type" -> "application/json")
-
-    val result = controller.generateReport(zRef, year, month)(request)
-
-    status(result) shouldBe BAD_REQUEST
-
-    val json = contentAsJson(result)
-    (json \ "code").as[String]    shouldBe "EMPTY_PAYLOAD"
-    (json \ "message").as[String] shouldBe "The payload is empty. Please ensure the request body contains a valid JSON payload before resubmitting."
   }
 
 }
