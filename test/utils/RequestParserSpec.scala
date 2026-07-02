@@ -17,43 +17,26 @@
 package utils
 
 import play.api.libs.json._
-import play.api.mvc._
-import play.api.test.FakeRequest
-import play.api.test.Helpers.{contentAsJson, stubControllerComponents}
+import play.api.test.Helpers.contentAsJson
 import uk.gov.hmrc.disareturnstestsupportapi.models.GenerateReportRequest
-import uk.gov.hmrc.disareturnstestsupportapi.models.errors.{EmptyPayload, ValidationFailureResponse}
+import uk.gov.hmrc.disareturnstestsupportapi.models.errors.ValidationFailureResponse
 import uk.gov.hmrc.disareturnstestsupportapi.utils.RequestParser
 
 import scala.concurrent.Future
 
 class RequestParserSpec extends BaseUnitSpec {
-  val cc: ControllerComponents = stubControllerComponents()
-  val parsers = new RequestParser(cc)
+  val parsers = new RequestParser()
 
   "CustomParsers#parseJsonOrEmpty" should {
 
-    "return Left(EmptyPayload) when the request body is empty" in {
-      val request = FakeRequest().withBody(AnyContentAsEmpty)
-      val result  = parsers.parseJson[GenerateReportRequest](request)
-
-      result.isLeft shouldBe true
-
-      val leftResult = result.left.get
-      leftResult.header.status shouldBe 400
-
-      val json = leftResult.body.consumeData.futureValue
-      Json.parse(json.utf8String).validate[EmptyPayload].isSuccess shouldBe true
-    }
-
     "return Left(ValidationFailureResponse) when the request body is invalid JSON" in {
       val invalidJson = """{"oversubscribed": 1, "traceAndMatch": "NotInt", "failedEligibility": 1 }"""
-      val request     = FakeRequest().withBody(AnyContentAsJson(Json.parse(invalidJson)))
 
-      val result = parsers.parseJson[GenerateReportRequest](request)
+      val result = parsers.parseJson[GenerateReportRequest](Json.parse(invalidJson))
 
       result.isLeft shouldBe true
 
-      val leftResult = result.left.get
+      val leftResult = result.swap.getOrElse(fail("Expected Left(Result)"))
       leftResult.header.status shouldBe 400
 
       val bodyJson           = contentAsJson(Future.successful(leftResult))
@@ -62,21 +45,19 @@ class RequestParserSpec extends BaseUnitSpec {
       validationResponse.isSuccess shouldBe true
 
       val response = validationResponse.get
-      response.code            shouldBe "BAD_REQUEST"
-      response.issues.nonEmpty shouldBe true
+      response.code            shouldBe "VALIDATION_FAILURE"
+      response.errors.nonEmpty shouldBe true
 
-      val fieldsWithErrors = response.issues.flatMap(_.keys)
-      fieldsWithErrors should contain("traceAndMatch")
+      response.errors.map(_.path) should contain("/traceAndMatch")
     }
 
     "return Right(TestPayload) when the request body is valid JSON" in {
       val validJson = Json.obj("oversubscribed" -> 1, "traceAndMatch" -> 1, "failedEligibility" -> 1)
-      val request   = FakeRequest().withBody(AnyContentAsJson(validJson))
 
-      val result = parsers.parseJson[GenerateReportRequest](request)
+      val result = parsers.parseJson[GenerateReportRequest](validJson)
       result.isRight shouldBe true
 
-      result.right.get shouldBe GenerateReportRequest(oversubscribed = 1, traceAndMatch = 1, failedEligibility = 1)
+      result.toOption.get shouldBe GenerateReportRequest(oversubscribed = 1, traceAndMatch = 1, failedEligibility = 1)
     }
   }
 }

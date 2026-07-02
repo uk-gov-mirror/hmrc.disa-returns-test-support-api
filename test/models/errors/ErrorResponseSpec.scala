@@ -44,34 +44,34 @@ class ErrorResponseSpec extends BaseUnitSpec {
 
     "serialize ValidationFailureResponse correctly" in {
       val response = ValidationFailureResponse(
-        issues = Seq(
-          Map("zRef"  -> "ZReference did not match expected format"),
-          Map("month" -> "Month did not match expected format")
+        errors = Seq(
+          FieldValidationError("VALIDATION_ERROR", "ZReference did not match expected format", "/zRef"),
+          FieldValidationError("VALIDATION_ERROR", "Month did not match expected format", "/month")
         )
       )
 
       val json = Json.toJson(response)
-      (json \ "code").as[String]                          shouldBe "BAD_REQUEST"
-      (json \ "message").as[String]                       shouldBe "Issue(s) with your request"
-      (json \ "issues").as[Seq[Map[String, String]]].size shouldBe 2
+      (json \ "code").as[String]                           shouldBe "VALIDATION_FAILURE"
+      (json \ "message").as[String]                        shouldBe "Bad request"
+      (json \ "errors").as[Seq[FieldValidationError]].size shouldBe 2
     }
 
     "deserialize ValidationFailureResponse from JSON" in {
       val json = Json.obj(
-        "code"    -> "BAD_REQUEST",
-        "message" -> "Issue(s) with your request",
-        "issues" -> Json.arr(
-          Json.obj("zRef"  -> "ZReference did not match expected format"),
-          Json.obj("month" -> "Month did not match expected format")
+        "code"    -> "VALIDATION_FAILURE",
+        "message" -> "Bad request",
+        "errors" -> Json.arr(
+          Json.obj("code" -> "VALIDATION_ERROR", "message" -> "ZReference did not match expected format", "path" -> "/zRef"),
+          Json.obj("code" -> "VALIDATION_ERROR", "message" -> "Month did not match expected format", "path"      -> "/month")
         )
       )
 
       val result = json.as[ValidationFailureResponse]
-      result.code    shouldBe "BAD_REQUEST"
-      result.message shouldBe "Issue(s) with your request"
-      result.issues    should contain allOf (
-        Map("zRef"  -> "ZReference did not match expected format"),
-        Map("month" -> "Month did not match expected format")
+      result.code    shouldBe "VALIDATION_FAILURE"
+      result.message shouldBe "Bad request"
+      result.errors    should contain allOf (
+        FieldValidationError("VALIDATION_ERROR", "ZReference did not match expected format", "/zRef"),
+        FieldValidationError("VALIDATION_ERROR", "Month did not match expected format", "/month")
       )
     }
   }
