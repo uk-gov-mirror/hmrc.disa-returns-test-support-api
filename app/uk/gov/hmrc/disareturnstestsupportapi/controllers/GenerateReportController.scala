@@ -61,7 +61,7 @@ class GenerateReportController @Inject() (
               authAction(validZRef)
                 .invokeBlock(
                   request,
-                  { _: Request[JsValue] =>
+                  (_: Request[JsValue]) =>
                     generateReportService
                       .generateReport(req, validZRef, y, m)
                       .map {
@@ -72,7 +72,6 @@ class GenerateReportController @Inject() (
                         case GenerateReportResult.Failure =>
                           InternalServerError(Json.toJson(InternalServerErr()))
                       }
-                  }
                 )
                 .recover { case e =>
                   logger.error(
