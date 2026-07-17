@@ -16,11 +16,11 @@
 
 package utils
 
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.test.Helpers.contentAsJson
 import uk.gov.hmrc.disareturnstestsupportapi.models.GenerateReportRequest
-import uk.gov.hmrc.disareturnstestsupportapi.models.errors.ValidationFailureResponse
 import uk.gov.hmrc.disareturnstestsupportapi.utils.RequestParser
+import uk.gov.hmrc.disareturnstestsupportapi.validators.ValidationFailureResponse
 
 import scala.concurrent.Future
 

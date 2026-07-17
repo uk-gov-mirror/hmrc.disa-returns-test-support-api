@@ -19,7 +19,7 @@ package uk.gov.hmrc.disareturnstestsupportapi.utils
 import play.api.libs.json._
 import play.api.mvc.Results.BadRequest
 import play.api.mvc._
-import uk.gov.hmrc.disareturnstestsupportapi.models.errors.ValidationFailureResponse
+import uk.gov.hmrc.disareturnstestsupportapi.validators.ValidationFailureResponse
 
 import javax.inject.{Inject, Singleton}
 

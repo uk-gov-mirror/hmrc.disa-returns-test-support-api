@@ -106,55 +106,6 @@ object MultipleErrorResponse {
   implicit val responseFormat: OWrites[MultipleErrorResponse] = Json.writes[MultipleErrorResponse]
 }
 
-case class ValidationFailureResponse(
-  code:    String = "VALIDATION_FAILURE",
-  message: String = "Bad request",
-  errors:  Seq[FieldValidationError]
-)
-
-object ValidationFailureResponse {
-  implicit val responseFormat: OFormat[ValidationFailureResponse] = Json.format[ValidationFailureResponse]
-
-  private def mapJsErrorToResponseCode(message: String): String = message match {
-    case "error.path.missing" => "MISSING_FIELD"
-    case _                    => "VALIDATION_ERROR"
-  }
-
-  private def formatFieldPath(jsPath: JsPath): String = {
-    val pathString = jsPath.path
-      .map {
-        case KeyPathNode(key)     => s"/$key"
-        case IdxPathNode(idx)     => s"/$idx"
-        case RecursiveSearch(key) => s"//$key"
-      }
-      .mkString("")
-
-    if (pathString.isEmpty) "/" else pathString
-  }
-
-  private def mapJsErrorMessage(message: String): String = message match {
-    case "error.path.missing"      => "This field is required"
-    case "error.min"               => "This field must be greater than or equal to 0"
-    case "error.expected.jsnumber" => "This field must be greater than or equal to 0"
-    case other                     => other
-  }
-
-  def createFromJsError(jsError: JsError): ValidationFailureResponse = {
-    val fieldErrors: Seq[FieldValidationError] = jsError.errors.toSeq.flatMap { case (path, errors) =>
-      errors.map { validationError =>
-        FieldValidationError(
-          code = mapJsErrorToResponseCode(validationError.message),
-          message = mapJsErrorMessage(validationError.message),
-          path = formatFieldPath(path)
-        )
-      }
-    }
-
-    ValidationFailureResponse(errors = fieldErrors)
-  }
-
-}
-
 case class FieldValidationError(
   code:    String,
   message: String,

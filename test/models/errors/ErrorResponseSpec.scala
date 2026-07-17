@@ -17,7 +17,8 @@
 package models.errors
 
 import play.api.libs.json.Json
-import uk.gov.hmrc.disareturnstestsupportapi.models.errors._
+import uk.gov.hmrc.disareturnstestsupportapi.models.errors.*
+import uk.gov.hmrc.disareturnstestsupportapi.validators.ValidationFailureResponse
 import utils.BaseUnitSpec
 
 class ErrorResponseSpec extends BaseUnitSpec {
