@@ -16,7 +16,7 @@
 
 package models.common
 
-import uk.gov.hmrc.disareturnstestsupportapi.models.common.IsaRefValidator
+import uk.gov.hmrc.disareturnstestsupportapi.models.validators.IsaRefValidator
 import utils.BaseUnitSpec
 
 class IsaRefValidatorSpec extends BaseUnitSpec {

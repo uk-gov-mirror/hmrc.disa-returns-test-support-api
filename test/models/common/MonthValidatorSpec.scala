@@ -16,7 +16,7 @@
 
 package models.common
 
-import uk.gov.hmrc.disareturnstestsupportapi.models.common.MonthValidator
+import uk.gov.hmrc.disareturnstestsupportapi.models.validators.MonthValidator
 import utils.BaseUnitSpec
 
 class MonthValidatorSpec extends BaseUnitSpec {

@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.disareturnstestsupportapi.validators
+package uk.gov.hmrc.disareturnstestsupportapi.models.validators
 
-import play.api.libs.json.{IdxPathNode, JsError, JsPath, Json, KeyPathNode, OFormat, RecursiveSearch}
+import play.api.libs.json.*
 import uk.gov.hmrc.disareturnstestsupportapi.models.errors.FieldValidationError
 
-case class ValidationFailureResponse(
+case class FailureResponseValidator(
   code:    String = "VALIDATION_FAILURE",
   message: String = "Bad request",
   errors:  Seq[FieldValidationError]
 )
 
-object ValidationFailureResponse {
-  implicit val responseFormat: OFormat[ValidationFailureResponse] = Json.format[ValidationFailureResponse]
+object FailureResponseValidator {
+  implicit val responseFormat: OFormat[FailureResponseValidator] = Json.format[FailureResponseValidator]
 
   private def mapJsErrorToResponseCode(message: String): String = message match {
     case "error.path.missing" => "MISSING_FIELD"
@@ -52,7 +52,7 @@ object ValidationFailureResponse {
     case other                     => other
   }
 
-  def createFromJsError(jsError: JsError): ValidationFailureResponse = {
+  def createFromJsError(jsError: JsError): FailureResponseValidator = {
     val fieldErrors: Seq[FieldValidationError] = jsError.errors.toSeq.flatMap { case (path, errors) =>
       errors.map { validationError =>
         FieldValidationError(
@@ -63,7 +63,7 @@ object ValidationFailureResponse {
       }
     }
 
-    ValidationFailureResponse(errors = fieldErrors)
+    FailureResponseValidator(errors = fieldErrors)
   }
 
 }

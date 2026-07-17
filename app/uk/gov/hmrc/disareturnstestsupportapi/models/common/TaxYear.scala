@@ -14,21 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.disareturnstestsupportapi.utils
+package uk.gov.hmrc.disareturnstestsupportapi.models.common
 
-import play.api.libs.json._
-import play.api.mvc.Results.BadRequest
-import play.api.mvc._
-import uk.gov.hmrc.disareturnstestsupportapi.models.validators.FailureResponseValidator
+import play.api.libs.json.{Json, OFormat}
 
-import javax.inject.{Inject, Singleton}
+case class TaxYear(value: String)
 
-@Singleton
-class RequestParser @Inject() () {
-
-  def parseJson[T: Reads](json: JsValue): Either[Result, T] =
-    json.validate[T].asEither.left.map { errors =>
-      val jsErrors = FailureResponseValidator.createFromJsError(JsError(errors))
-      BadRequest(Json.toJson(jsErrors))
-    }
+object TaxYear {
+  implicit val format: OFormat[TaxYear] = Json.format[TaxYear]
 }

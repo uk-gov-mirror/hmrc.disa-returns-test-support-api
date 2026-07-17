@@ -14,17 +14,9 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.disareturnstestsupportapi.models.common
-
-import play.api.libs.json.{Json, OFormat}
+package uk.gov.hmrc.disareturnstestsupportapi.models.validators
 
 import scala.util.matching.Regex
-
-case class TaxYear(value: String)
-
-object TaxYear {
-  implicit val format: OFormat[TaxYear] = Json.format[TaxYear]
-}
 
 object TaxYearValidator {
 

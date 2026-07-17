@@ -14,25 +14,13 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.disareturnstestsupportapi.models.common
+package uk.gov.hmrc.disareturnstestsupportapi.models.validators
 
-object MonthValidator {
-  private val validMonths: Set[String] = Set(
-    "JAN",
-    "FEB",
-    "MAR",
-    "APR",
-    "MAY",
-    "JUN",
-    "JUL",
-    "AUG",
-    "SEP",
-    "OCT",
-    "NOV",
-    "DEC"
-  )
+import scala.util.matching.Regex
 
-  def isValid(month: String): Boolean =
-    Option(month).exists(m => validMonths.contains(m.toUpperCase))
+object IsaRefValidator {
+  private val isaRefRegex: Regex = "^[z|Z][0-9]{4}$".r
 
+  def isValid(ref: String): Boolean =
+    isaRefRegex.pattern.matcher(ref).matches()
 }
