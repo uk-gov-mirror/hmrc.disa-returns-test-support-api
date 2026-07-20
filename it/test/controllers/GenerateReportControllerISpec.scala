@@ -21,6 +21,8 @@ import com.github.tomakehurst.wiremock.http.Fault
 import play.api.http.Status.{BAD_REQUEST, INTERNAL_SERVER_ERROR, NO_CONTENT, UNAUTHORIZED}
 import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws.WSResponse
+import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
+import play.api.libs.ws.DefaultBodyWritables.writeableOf_String
 import play.api.test.Helpers.await
 import utils.BaseIntegrationSpec
 

@@ -23,7 +23,7 @@ import uk.gov.hmrc.disareturnstestsupportapi.config.AppConfig
 import uk.gov.hmrc.disareturnstestsupportapi.controllers.actions.AuthAction
 import uk.gov.hmrc.disareturnstestsupportapi.controllers.parsers.StrictJsonBodyParser
 import uk.gov.hmrc.disareturnstestsupportapi.models.GenerateReportRequest
-import uk.gov.hmrc.disareturnstestsupportapi.models.common._
+import uk.gov.hmrc.disareturnstestsupportapi.models.validators._
 import uk.gov.hmrc.disareturnstestsupportapi.models.errors._
 import uk.gov.hmrc.disareturnstestsupportapi.service.GenerateReportService
 import uk.gov.hmrc.disareturnstestsupportapi.utils.RequestParser
@@ -61,7 +61,7 @@ class GenerateReportController @Inject() (
               authAction(validZRef)
                 .invokeBlock(
                   request,
-                  { _: Request[JsValue] =>
+                  (_: Request[JsValue]) =>
                     generateReportService
                       .generateReport(req, validZRef, y, m)
                       .map {
@@ -72,7 +72,6 @@ class GenerateReportController @Inject() (
                         case GenerateReportResult.Failure =>
                           InternalServerError(Json.toJson(InternalServerErr()))
                       }
-                  }
                 )
                 .recover { case e =>
                   logger.error(

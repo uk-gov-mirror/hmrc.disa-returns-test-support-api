@@ -16,7 +16,7 @@
 
 package models.common
 
-import uk.gov.hmrc.disareturnstestsupportapi.models.common.TaxYearValidator
+import uk.gov.hmrc.disareturnstestsupportapi.models.validators.TaxYearValidator
 import utils.BaseUnitSpec
 
 class TaxYearValidatorSpec extends BaseUnitSpec {

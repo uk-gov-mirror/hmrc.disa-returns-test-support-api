@@ -17,7 +17,8 @@
 package models.errors
 
 import play.api.libs.json.Json
-import uk.gov.hmrc.disareturnstestsupportapi.models.errors._
+import uk.gov.hmrc.disareturnstestsupportapi.models.errors.*
+import uk.gov.hmrc.disareturnstestsupportapi.models.validators.FailureResponseValidator
 import utils.BaseUnitSpec
 
 class ErrorResponseSpec extends BaseUnitSpec {
@@ -42,8 +43,8 @@ class ErrorResponseSpec extends BaseUnitSpec {
       result.message shouldBe "There has been an issue processing your request"
     }
 
-    "serialize ValidationFailureResponse correctly" in {
-      val response = ValidationFailureResponse(
+    "serialize FailureResponseValidator correctly" in {
+      val response = FailureResponseValidator(
         errors = Seq(
           FieldValidationError("VALIDATION_ERROR", "ZReference did not match expected format", "/zRef"),
           FieldValidationError("VALIDATION_ERROR", "Month did not match expected format", "/month")
@@ -56,7 +57,7 @@ class ErrorResponseSpec extends BaseUnitSpec {
       (json \ "errors").as[Seq[FieldValidationError]].size shouldBe 2
     }
 
-    "deserialize ValidationFailureResponse from JSON" in {
+    "deserialize FailureResponseValidator from JSON" in {
       val json = Json.obj(
         "code"    -> "VALIDATION_FAILURE",
         "message" -> "Bad request",
@@ -66,7 +67,7 @@ class ErrorResponseSpec extends BaseUnitSpec {
         )
       )
 
-      val result = json.as[ValidationFailureResponse]
+      val result = json.as[FailureResponseValidator]
       result.code    shouldBe "VALIDATION_FAILURE"
       result.message shouldBe "Bad request"
       result.errors    should contain allOf (

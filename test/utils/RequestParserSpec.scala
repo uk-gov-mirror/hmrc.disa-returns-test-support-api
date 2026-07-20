@@ -16,10 +16,10 @@
 
 package utils
 
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.test.Helpers.contentAsJson
 import uk.gov.hmrc.disareturnstestsupportapi.models.GenerateReportRequest
-import uk.gov.hmrc.disareturnstestsupportapi.models.errors.ValidationFailureResponse
+import uk.gov.hmrc.disareturnstestsupportapi.models.validators.FailureResponseValidator
 import uk.gov.hmrc.disareturnstestsupportapi.utils.RequestParser
 
 import scala.concurrent.Future
@@ -29,7 +29,7 @@ class RequestParserSpec extends BaseUnitSpec {
 
   "CustomParsers#parseJsonOrEmpty" should {
 
-    "return Left(ValidationFailureResponse) when the request body is invalid JSON" in {
+    "return Left(FailureResponseValidator) when the request body is invalid JSON" in {
       val invalidJson = """{"oversubscribed": 1, "traceAndMatch": "NotInt", "failedEligibility": 1 }"""
 
       val result = parsers.parseJson[GenerateReportRequest](Json.parse(invalidJson))
@@ -40,7 +40,7 @@ class RequestParserSpec extends BaseUnitSpec {
       leftResult.header.status shouldBe 400
 
       val bodyJson           = contentAsJson(Future.successful(leftResult))
-      val validationResponse = bodyJson.validate[ValidationFailureResponse]
+      val validationResponse = bodyJson.validate[FailureResponseValidator]
 
       validationResponse.isSuccess shouldBe true
 
