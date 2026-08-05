@@ -2,7 +2,7 @@ openapi: 3.0.3
 
 info:
   version: 1.0.0
-  title: ISA Returns Test Support API
+  title: ISA Returns Test Support
   description: |
     # Overview
     Use this API to trigger the generation of a test reconciliation report for the ISA Returns API. 
