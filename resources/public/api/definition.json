@@ -1,6 +1,6 @@
 {
   "api": {
-    "name": "ISA Returns Test Support",
+    "name": "ISA Returns API - Test Support",
     "description": "Test Support API for the ISA Returns API",
     "context": "test/obligations/declaration/isa/return",
     "categories": ["OTHER", "LIFETIME_ISA"],
