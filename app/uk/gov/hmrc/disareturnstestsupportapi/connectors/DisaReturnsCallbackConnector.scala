@@ -16,32 +16,42 @@
 
 package uk.gov.hmrc.disareturnstestsupportapi.connectors
 
+import com.typesafe.config.Config
+import org.apache.pekko.actor.ActorSystem
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat.oFormatFromReadsAndOWrites
 import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import uk.gov.hmrc.disareturnstestsupportapi.config.AppConfig
 import uk.gov.hmrc.disareturnstestsupportapi.models.callback.{CallbackRequest, CallbackResponse}
-import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps, UpstreamErrorResponse}
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
-class DisaReturnsCallbackConnector @Inject() (config: AppConfig, httpClient: HttpClientV2)(implicit ec: ExecutionContext) {
+class DisaReturnsCallbackConnector @Inject() (
+  config:                     AppConfig,
+  httpClient:                 HttpClientV2,
+  override val configuration: Config,
+  override val actorSystem:   ActorSystem
+)(implicit ec:                ExecutionContext)
+    extends BaseConnector {
 
   def callback(zRef: String, year: String, month: String, totalRecords: Int)(implicit hc: HeaderCarrier): Future[CallbackResponse] = {
     val url  = url"${config.disaReturnsBaseUrl}/callback/monthly/$zRef/$year/$month"
     val body = CallbackRequest(totalRecords)
-    httpClient
-      .post(url)
-      .withBody(Json.toJson(body))
-      .execute[HttpResponse]
+    retryFor[HttpResponse]("send DISA returns callback")(retryCondition) {
+      httpClient
+        .post(url)
+        .withBody(Json.toJson(body))
+        .executeOrFail
+    }
       .map { response =>
         response.status match {
           case 204 => CallbackResponse.Success
           case _   => CallbackResponse.Failure
         }
       }
+      .recover { case _: UpstreamErrorResponse => CallbackResponse.Failure }
   }
 }

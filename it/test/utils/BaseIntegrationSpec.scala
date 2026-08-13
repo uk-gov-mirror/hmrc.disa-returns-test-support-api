@@ -47,7 +47,7 @@ trait BaseIntegrationSpec
     .configure(config)
     .build()
 
-  def config: Map[String, String] =
+  def config: Map[String, Any] =
     Map(
       "auditing.enabled"                              -> "false",
       "microservice.services.auth.host"               -> wiremockHost,
@@ -55,7 +55,8 @@ trait BaseIntegrationSpec
       "microservice.services.disa-returns-stubs.host" -> wiremockHost,
       "microservice.services.disa-returns-stubs.port" -> wiremockPort.toString,
       "microservice.services.disa-returns.host"       -> wiremockHost,
-      "microservice.services.disa-returns.port"       -> wiremockPort.toString
+      "microservice.services.disa-returns.port"       -> wiremockPort.toString,
+      "http-verbs.retries.intervals"                  -> Seq("1ms", "1ms", "1ms")
     )
 
   override def beforeAll(): Unit = {

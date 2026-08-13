@@ -16,12 +16,14 @@
 
 package connectors
 
-import org.mockito.ArgumentMatchers._
-import org.mockito.Mockito._
+import com.typesafe.config.ConfigFactory
+import org.mockito.ArgumentMatchers.*
+import org.mockito.Mockito.*
+import play.api.http.Status.INTERNAL_SERVER_ERROR
 import uk.gov.hmrc.disareturnstestsupportapi.connectors.GenerateReportConnector
 import uk.gov.hmrc.disareturnstestsupportapi.models.GenerateReportRequest
 import uk.gov.hmrc.disareturnstestsupportapi.models.errors.GenerateReportResult
-import uk.gov.hmrc.http.{HttpResponse, StringContextOps}
+import uk.gov.hmrc.http.{HttpResponse, StringContextOps, UpstreamErrorResponse}
 import utils.BaseUnitSpec
 
 import scala.concurrent.Future
@@ -29,8 +31,12 @@ import scala.concurrent.Future
 class GenerateReportConnectorSpec extends BaseUnitSpec {
 
   trait TestSetup {
+    clearInvocations(mockRequestBuilder)
 
-    val connector = new GenerateReportConnector(mockAppConfig, mockHttpClient)
+    val retryConfig = ConfigFactory.parseString(
+      "http-verbs.retries.intervals = [1 millisecond, 1 millisecond, 1 millisecond]"
+    )
+    val connector = new GenerateReportConnector(mockAppConfig, mockHttpClient, retryConfig, system)
 
     val zref  = "Z1234"
     val year  = "2025-26"
@@ -53,22 +59,26 @@ class GenerateReportConnectorSpec extends BaseUnitSpec {
 
     "return Success when the response status is 204" in new TestSetup {
       val httpResponse: HttpResponse = HttpResponse(204, "")
-      when(mockRequestBuilder.execute[HttpResponse](any(), any())).thenReturn(Future.successful(httpResponse))
+      when(mockRequestBuilder.execute[Either[UpstreamErrorResponse, HttpResponse]](any(), any()))
+        .thenReturn(Future.successful(Right(httpResponse)))
 
       val result: GenerateReportResult = connector.generateReport(body, zref, year, month).futureValue
       result shouldBe GenerateReportResult.Success
     }
 
-    "return Failure when the response status is not 204" in new TestSetup {
-      val httpResponse: HttpResponse = HttpResponse(500, "")
-      when(mockRequestBuilder.execute[HttpResponse](any(), any())).thenReturn(Future.successful(httpResponse))
+    Seq(INTERNAL_SERVER_ERROR, 502, 503).foreach { status =>
+      s"retry three times and return Failure when the response status is $status" in new TestSetup {
+        val error = UpstreamErrorResponse("downstream unavailable", status)
+        when(mockRequestBuilder.execute[Either[UpstreamErrorResponse, HttpResponse]](any(), any()))
+          .thenReturn(Future.successful(Left(error)))
 
-      val result: GenerateReportResult = connector.generateReport(body, zref, year, month).futureValue
-      result shouldBe GenerateReportResult.Failure
+        connector.generateReport(body, zref, year, month).futureValue shouldBe GenerateReportResult.Failure
+        verify(mockRequestBuilder, times(4)).execute[Either[UpstreamErrorResponse, HttpResponse]](any(), any())
+      }
     }
 
     "return Failure when the call throws an exception" in new TestSetup {
-      when(mockRequestBuilder.execute[HttpResponse](any(), any()))
+      when(mockRequestBuilder.execute[Either[UpstreamErrorResponse, HttpResponse]](any(), any()))
         .thenReturn(Future.failed(new RuntimeException("Timeout")))
       val result: GenerateReportResult = connector
         .generateReport(body, zref, year, month)
@@ -89,11 +99,13 @@ class GenerateReportConnectorSpec extends BaseUnitSpec {
           |}
           |""".stripMargin
 
-      val httpResponse: HttpResponse = HttpResponse(400, responseBody)
-      when(mockRequestBuilder.execute[HttpResponse](any(), any())).thenReturn(Future.successful(httpResponse))
+      val error = UpstreamErrorResponse(s"POST returned 400. Response body: '$responseBody'", 400)
+      when(mockRequestBuilder.execute[Either[UpstreamErrorResponse, HttpResponse]](any(), any()))
+        .thenReturn(Future.successful(Left(error)))
 
       val result: GenerateReportResult = connector.generateReport(body, zref, year, month).futureValue
       result shouldBe GenerateReportResult.IssueLimitExceeded
+      verify(mockRequestBuilder, times(1)).execute[Either[UpstreamErrorResponse, HttpResponse]](any(), any())
     }
   }
 }

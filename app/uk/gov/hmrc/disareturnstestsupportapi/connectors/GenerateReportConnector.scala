@@ -16,20 +16,29 @@
 
 package uk.gov.hmrc.disareturnstestsupportapi.connectors
 
+import com.typesafe.config.Config
+import org.apache.pekko.actor.ActorSystem
+import play.api.http.Status.{BAD_REQUEST, NO_CONTENT}
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat.oFormatFromReadsAndOWrites
 import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import uk.gov.hmrc.disareturnstestsupportapi.config.AppConfig
 import uk.gov.hmrc.disareturnstestsupportapi.models.GenerateReportRequest
 import uk.gov.hmrc.disareturnstestsupportapi.models.errors.GenerateReportResult
-import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps, UpstreamErrorResponse}
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
-class GenerateReportConnector @Inject() (config: AppConfig, httpClient: HttpClientV2)(implicit ec: ExecutionContext) {
+class GenerateReportConnector @Inject() (
+  config:                     AppConfig,
+  httpClient:                 HttpClientV2,
+  override val configuration: Config,
+  override val actorSystem:   ActorSystem
+)(implicit ec:                ExecutionContext)
+    extends BaseConnector {
 
   def generateReport(
     body:        GenerateReportRequest,
@@ -39,26 +48,33 @@ class GenerateReportConnector @Inject() (config: AppConfig, httpClient: HttpClie
   )(implicit hc: HeaderCarrier): Future[GenerateReportResult] = {
 
     val url = url"${config.disaReturnsStubsBaseUrl}/test-only/$zRef/$year/$month/reconciliation"
-    httpClient
-      .post(url)
-      .withBody(Json.toJson(body))
-      .setHeader("Authorization" -> s"Bearer")
-      .execute[HttpResponse]
+    retryFor[HttpResponse]("generate reconciliation report")(retryCondition) {
+      httpClient
+        .post(url)
+        .withBody(Json.toJson(body))
+        .setHeader("Authorization" -> s"Bearer")
+        .executeOrFail
+    }
       .map { response =>
-        response.status match {
-          case 204 => GenerateReportResult.Success
-          case 400 =>
-            val code =
-              (Json.parse(response.body) \ "code").asOpt[String]
-            code match {
-              case Some("ISSUE_LIMIT_EXCEEDED") =>
-                GenerateReportResult.IssueLimitExceeded
-              case _ =>
-                GenerateReportResult.Failure
-            }
-          case _ => GenerateReportResult.Failure
-        }
+        resultFor(response.status, response.body)
       }
+      .recover { case error: UpstreamErrorResponse => resultFor(error.statusCode, responseBody(error)) }
   }
 
+  private def resultFor(status: Int, body: String): GenerateReportResult =
+    status match {
+      case NO_CONTENT => GenerateReportResult.Success
+      case BAD_REQUEST =>
+        val code = Try((Json.parse(body) \ "code").asOpt[String]).toOption.flatten
+        code match {
+          case Some("ISSUE_LIMIT_EXCEEDED") => GenerateReportResult.IssueLimitExceeded
+          case _                            => GenerateReportResult.Failure
+        }
+      case _ => GenerateReportResult.Failure
+    }
+
+  private def responseBody(error: UpstreamErrorResponse): String = {
+    val bodyPattern = "(?s).*Response body: '(.*)'$".r
+    bodyPattern.findFirstMatchIn(error.message).map(_.group(1)).getOrElse(error.message)
+  }
 }

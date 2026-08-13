@@ -16,11 +16,13 @@
 
 package connectors
 
+import com.typesafe.config.ConfigFactory
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
+import play.api.http.Status.{BAD_GATEWAY, BAD_REQUEST, INTERNAL_SERVER_ERROR, NO_CONTENT, SERVICE_UNAVAILABLE}
 import uk.gov.hmrc.disareturnstestsupportapi.connectors.DisaReturnsCallbackConnector
 import uk.gov.hmrc.disareturnstestsupportapi.models.callback.CallbackResponse
-import uk.gov.hmrc.http.{HttpResponse, StringContextOps}
+import uk.gov.hmrc.http.{HttpResponse, StringContextOps, UpstreamErrorResponse}
 import utils.BaseUnitSpec
 
 import scala.concurrent.Future
@@ -28,7 +30,12 @@ import scala.concurrent.Future
 class DisaReturnsCallbackConnectorSpec extends BaseUnitSpec {
 
   trait TestSetup {
-    val connector = new DisaReturnsCallbackConnector(mockAppConfig, mockHttpClient)
+    clearInvocations(mockRequestBuilder)
+
+    val retryConfig = ConfigFactory.parseString(
+      "http-verbs.retries.intervals = [1 millisecond, 1 millisecond, 1 millisecond]"
+    )
+    val connector = new DisaReturnsCallbackConnector(mockAppConfig, mockHttpClient, retryConfig, system)
 
     val zref         = "Z1234"
     val year         = "2025-26"
@@ -45,24 +52,38 @@ class DisaReturnsCallbackConnectorSpec extends BaseUnitSpec {
 
   "CallbackConnector.sendMonthlyCallback" should {
 
-    "return Success when the response status is 204" in new TestSetup {
-      val httpResponse: HttpResponse = HttpResponse(204, "")
-      when(mockRequestBuilder.execute[HttpResponse](any(), any())).thenReturn(Future.successful(httpResponse))
+    s"return Success when the response status is $NO_CONTENT" in new TestSetup {
+      val httpResponse: HttpResponse = HttpResponse(NO_CONTENT, "")
+      when(mockRequestBuilder.execute[Either[UpstreamErrorResponse, HttpResponse]](any(), any()))
+        .thenReturn(Future.successful(Right(httpResponse)))
 
       val result: CallbackResponse = connector.callback(zref, year, month, totalRecords).futureValue
       result shouldBe CallbackResponse.Success
     }
 
-    "return Failure when the response status is not 204" in new TestSetup {
-      val httpResponse: HttpResponse = HttpResponse(500, "")
-      when(mockRequestBuilder.execute[HttpResponse](any(), any())).thenReturn(Future.successful(httpResponse))
+    Seq(INTERNAL_SERVER_ERROR, BAD_GATEWAY, SERVICE_UNAVAILABLE).foreach { status =>
+      s"retry three times and return Failure when the response status is $status" in new TestSetup {
+        val error = UpstreamErrorResponse("downstream unavailable", status)
+        when(mockRequestBuilder.execute[Either[UpstreamErrorResponse, HttpResponse]](any(), any()))
+          .thenReturn(Future.successful(Left(error)))
 
-      val result: CallbackResponse = connector.callback(zref, year, month, totalRecords).futureValue
-      result shouldBe CallbackResponse.Failure
+        connector.callback(zref, year, month, totalRecords).futureValue shouldBe CallbackResponse.Failure
+        verify(mockRequestBuilder, times(4)).execute[Either[UpstreamErrorResponse, HttpResponse]](any(), any())
+      }
+    }
+
+    "not retry a non-5xx response" in new TestSetup {
+      val error = UpstreamErrorResponse("bad request", BAD_REQUEST)
+      when(mockRequestBuilder.execute[Either[UpstreamErrorResponse, HttpResponse]](any(), any()))
+        .thenReturn(Future.successful(Left(error)))
+
+      connector.callback(zref, year, month, totalRecords).futureValue shouldBe CallbackResponse.Failure
+      verify(mockRequestBuilder, times(1)).execute[Either[UpstreamErrorResponse, HttpResponse]](any(), any())
     }
 
     "return Failure when the call throws an exception" in new TestSetup {
-      when(mockRequestBuilder.execute[HttpResponse](any(), any())).thenReturn(Future.failed(new RuntimeException("Timeout")))
+      when(mockRequestBuilder.execute[Either[UpstreamErrorResponse, HttpResponse]](any(), any()))
+        .thenReturn(Future.failed(new RuntimeException("Timeout")))
 
       val result: CallbackResponse = connector
         .callback(zref, year, month, totalRecords)

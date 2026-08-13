@@ -12,11 +12,15 @@ lazy val microservice = Project("disa-returns-test-support-api", file("."))
     libraryDependencies ++= AppDependencies.compile ++ AppDependencies.test,
     scalacOptions += "-Wconf:src=routes/.*:s"
   )
-  .settings(CodeCoverageSettings.settings *)
+  .settings(CodeCoverageSettings.settings*)
   .settings(
     Compile / unmanagedResourceDirectories += baseDirectory.value / "resources"
   )
   .settings(PlayKeys.playDefaultPort := 1206)
+
+Test / javaOptions += "-Dlogger.resource=logback-test.xml"
+Test / classLoaderLayeringStrategy := ClassLoaderLayeringStrategy.Flat
+Test / fork := true
 
 lazy val it = project
   .enablePlugins(PlayScala)
