@@ -48,26 +48,26 @@ class GenerateReportService @Inject() (
             .map {
               case CallbackResponse.Success =>
                 logger.info(
-                  s"[GenerateReportService] Generate report successful zRef=$zRef year=$year month=$month"
+                  s"[GenerateReportService][generateReport] Generate report successful zRef=$zRef year=$year month=$month"
                 )
                 GenerateReportResult.Success
 
               case _ =>
                 logger.error(
-                  s"[GenerateReportService] Callback failed zRef=$zRef year=$year month=$month"
+                  s"[GenerateReportService][generateReport] Callback failed zRef=$zRef year=$year month=$month"
                 )
                 GenerateReportResult.Failure
             }
 
         case GenerateReportResult.IssueLimitExceeded =>
           logger.warn(
-            s"[GenerateReportService] Record limit exceeded zRef=$zRef year=$year month=$month"
+            s"[GenerateReportService][generateReport] Record limit exceeded zRef=$zRef year=$year month=$month"
           )
           Future.successful(GenerateReportResult.IssueLimitExceeded)
 
         case GenerateReportResult.Failure =>
           logger.error(
-            s"[GenerateReportService] Generate report failed zRef=$zRef year=$year month=$month"
+            s"[GenerateReportService][generateReport] Generate report failed zRef=$zRef year=$year month=$month"
           )
           Future.successful(GenerateReportResult.Failure)
       }

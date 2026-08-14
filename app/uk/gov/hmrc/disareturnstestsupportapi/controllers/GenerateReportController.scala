@@ -75,7 +75,7 @@ class GenerateReportController @Inject() (
                 )
                 .recover { case e =>
                   logger.error(
-                    s"[GenerateReportController] Unexpected error zRef=$zRef year=$year month=$month",
+                    s"[GenerateReportController][generateReport] Unexpected error zRef=$zRef year=$year month=$month",
                     e
                   )
                   InternalServerError(Json.toJson(InternalServerErr()))

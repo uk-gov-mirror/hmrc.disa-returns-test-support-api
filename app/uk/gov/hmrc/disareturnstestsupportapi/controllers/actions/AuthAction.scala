@@ -74,11 +74,11 @@ class AuthAction @Inject() (ac: AuthConnector, cc: ControllerComponents)(implici
           else throw InternalError("Z-Ref does not match enrolment.")
         } recover {
           case ex: AuthorisationException =>
-            logger.warn(s"Authorization failed. Error: ${ex.reason}")
+            logger.warn(s"[AuthAction][invokeBlock] Authorization failed. Error: ${ex.reason}")
             Unauthorized(Json.toJson(UnauthorisedErr(message = s"${ex.reason}")))
 
           case ex =>
-            logger.warn(s"Auth request failed with unexpected exception: $ex")
+            logger.warn(s"[AuthAction][invokeBlock] Auth request failed with unexpected exception: $ex")
             InternalServerError(Json.toJson(InternalServerErr()))
         }
       }
