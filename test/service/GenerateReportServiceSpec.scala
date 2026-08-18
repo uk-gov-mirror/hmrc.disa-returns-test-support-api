@@ -41,99 +41,97 @@ class GenerateReportServiceSpec extends BaseUnitSpec {
   private val request =
     GenerateReportRequest(oversubscribed = 1, traceAndMatch = 1, failedEligibility = 1)
 
-  private val zRef  = "Z123456"
-  private val year  = "2024"
-  private val month = "01"
+  private val zRef = "Z123456"
 
   "GenerateReportService#generateReport" should {
 
     "return Success when generate succeeds and callback succeeds" in {
-      when(mockGenerateReportConnector.generateReport(request, zRef, year, month))
+      when(mockGenerateReportConnector.generateReport(request, zRef))
         .thenReturn(Future.successful(GenerateReportResult.Success))
 
-      when(mockDisaReturnsCallbackConnector.callback(zRef, year, month, request.totalRecords))
+      when(mockDisaReturnsCallbackConnector.callback(zRef, request.totalRecords))
         .thenReturn(Future.successful(CallbackResponse.Success))
 
-      val result = service.generateReport(request, zRef, year, month).futureValue
+      val result = service.generateReport(request, zRef).futureValue
 
       result shouldBe GenerateReportResult.Success
     }
 
     "return Failure when generate succeeds but callback fails" in {
-      when(mockGenerateReportConnector.generateReport(request, zRef, year, month))
+      when(mockGenerateReportConnector.generateReport(request, zRef))
         .thenReturn(Future.successful(GenerateReportResult.Success))
 
-      when(mockDisaReturnsCallbackConnector.callback(zRef, year, month, request.totalRecords))
+      when(mockDisaReturnsCallbackConnector.callback(zRef, request.totalRecords))
         .thenReturn(Future.successful(CallbackResponse.Failure))
 
-      val result = service.generateReport(request, zRef, year, month).futureValue
+      val result = service.generateReport(request, zRef).futureValue
 
       result shouldBe GenerateReportResult.Failure
     }
 
     "return Failure when generate fails" in {
-      when(mockGenerateReportConnector.generateReport(request, zRef, year, month))
+      when(mockGenerateReportConnector.generateReport(request, zRef))
         .thenReturn(Future.successful(GenerateReportResult.Failure))
 
-      val result = service.generateReport(request, zRef, year, month).futureValue
+      val result = service.generateReport(request, zRef).futureValue
 
       result shouldBe GenerateReportResult.Failure
 
       verify(mockDisaReturnsCallbackConnector, never())
-        .callback(any[String], any[String], any[String], any[Int])(any[HeaderCarrier])
+        .callback(any[String], any[Int])(any[HeaderCarrier])
     }
 
     "propagate exception if generate connector throws" in {
       val ex = new RuntimeException("Boom!")
-      when(mockGenerateReportConnector.generateReport(request, zRef, year, month))
+      when(mockGenerateReportConnector.generateReport(request, zRef))
         .thenReturn(Future.failed(ex))
 
-      val thrown = service.generateReport(request, zRef, year, month).failed.futureValue
+      val thrown = service.generateReport(request, zRef).failed.futureValue
 
       thrown shouldBe ex
       verify(mockDisaReturnsCallbackConnector, never())
-        .callback(any[String], any[String], any[String], any[Int])(any[HeaderCarrier])
+        .callback(any[String], any[Int])(any[HeaderCarrier])
     }
 
     "propagate exception if callback connector throws" in {
-      when(mockGenerateReportConnector.generateReport(request, zRef, year, month))
+      when(mockGenerateReportConnector.generateReport(request, zRef))
         .thenReturn(Future.successful(GenerateReportResult.Success))
 
       val ex = new RuntimeException("Callback boom!")
-      when(mockDisaReturnsCallbackConnector.callback(zRef, year, month, request.totalRecords))
+      when(mockDisaReturnsCallbackConnector.callback(zRef, request.totalRecords))
         .thenReturn(Future.failed(ex))
 
-      val thrown = service.generateReport(request, zRef, year, month).failed.futureValue
+      val thrown = service.generateReport(request, zRef).failed.futureValue
 
       thrown shouldBe ex
     }
 
     "return IssueLimitExceeded when generate reports hits the record limit" in {
-      when(mockGenerateReportConnector.generateReport(request, zRef, year, month))
+      when(mockGenerateReportConnector.generateReport(request, zRef))
         .thenReturn(Future.successful(GenerateReportResult.IssueLimitExceeded))
 
-      val result = service.generateReport(request, zRef, year, month).futureValue
+      val result = service.generateReport(request, zRef).futureValue
 
       result shouldBe GenerateReportResult.IssueLimitExceeded
 
       verify(mockDisaReturnsCallbackConnector, never())
-        .callback(any[String], any[String], any[String], any[Int])(any[HeaderCarrier])
+        .callback(any[String], any[Int])(any[HeaderCarrier])
     }
 
     "return IssueLimitExceeded even if callback connector would have thrown" in {
-      when(mockGenerateReportConnector.generateReport(request, zRef, year, month))
+      when(mockGenerateReportConnector.generateReport(request, zRef))
         .thenReturn(Future.successful(GenerateReportResult.IssueLimitExceeded))
 
       val ex = new RuntimeException("Callback boom!")
-      when(mockDisaReturnsCallbackConnector.callback(zRef, year, month, request.totalRecords))
+      when(mockDisaReturnsCallbackConnector.callback(zRef, request.totalRecords))
         .thenReturn(Future.failed(ex))
 
-      val result = service.generateReport(request, zRef, year, month).futureValue
+      val result = service.generateReport(request, zRef).futureValue
 
       result shouldBe GenerateReportResult.IssueLimitExceeded
 
       verify(mockDisaReturnsCallbackConnector, never())
-        .callback(any[String], any[String], any[String], any[Int])(any[HeaderCarrier])
+        .callback(any[String], any[Int])(any[HeaderCarrier])
     }
   }
 }

@@ -13,7 +13,6 @@ object CodeCoverageSettings {
     "testOnly.*",
     "testOnlyDoNotUseInAppConf.*",
     "uk.gov.hmrc.disareturnstestsupportapi.models.errors.*",
-    "uk.gov.hmrc.disareturnstestsupportapi.models.common.TaxYear",
     "uk.gov.hmrc.disareturnstestsupportapi.models.callback.*"
   )
 

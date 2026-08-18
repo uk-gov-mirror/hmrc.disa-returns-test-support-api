@@ -28,12 +28,8 @@ import utils.BaseIntegrationSpec
 
 class GenerateReportControllerISpec extends BaseIntegrationSpec {
 
-  val zRef         = "Z1234"
-  val invalidZRef  = "1234"
-  val year         = "2025-26"
-  val invalidYear  = "202526"
-  val month        = "FEB"
-  val invalidMonth = "XYZ"
+  val zRef        = "Z1234"
+  val invalidZRef = "1234"
 
   val validJsonBody: String =
     """
@@ -56,44 +52,44 @@ class GenerateReportControllerISpec extends BaseIntegrationSpec {
   val validParsedJson:   JsValue = Json.parse(validJsonBody)
   val invalidParsedJson: JsValue = Json.parse(invalidJsonBody)
 
-  "POST /monthly/:zRef/:year/:month/reconciliation" should {
+  "POST /monthly/:zRef/reconciliation" should {
 
     "return 204 NoContent when generate report and callback both succeed" in {
       stubAuth()
-      stubGenerateReport(noContent, zRef, year, month)
-      stubCallback(noContent, zRef, year, month)
+      stubGenerateReport(noContent, zRef)
+      stubCallback(noContent, zRef)
 
-      val result = generateRequest(zRef = zRef, year = year, month = month, body = validParsedJson)
+      val result = generateRequest(zRef = zRef, body = validParsedJson)
 
       result.status shouldBe NO_CONTENT
     }
 
     "return 204 NoContent when lowercase ZRef supplied" in {
       stubAuth()
-      stubGenerateReport(noContent, zRef, year, month)
-      stubCallback(noContent, zRef, year, month)
+      stubGenerateReport(noContent, zRef)
+      stubCallback(noContent, zRef)
 
-      val result = generateRequest(zRef = zRef.toLowerCase, year = year, month = month, body = validParsedJson)
+      val result = generateRequest(zRef = zRef.toLowerCase, body = validParsedJson)
 
       result.status shouldBe NO_CONTENT
     }
 
     "return 500 InternalServerError when callback fails" in {
       stubAuth()
-      stubGenerateReport(noContent, zRef, year, month)
-      stubCallback(serverError, zRef, year, month)
+      stubGenerateReport(noContent, zRef)
+      stubCallback(serverError, zRef)
 
-      val result = generateRequest(zRef = zRef, year = year, month = month, body = validParsedJson)
+      val result = generateRequest(zRef = zRef, body = validParsedJson)
 
       result.status shouldBe INTERNAL_SERVER_ERROR
     }
 
     "return 500 InternalServerError when generateReport fails" in {
       stubAuth()
-      stubGenerateReport(serverError, zRef, year, month)
-      stubCallback(noContent, zRef, year, month)
+      stubGenerateReport(serverError, zRef)
+      stubCallback(noContent, zRef)
 
-      val result = generateRequest(zRef = zRef, year = year, month = month, body = validParsedJson)
+      val result = generateRequest(zRef = zRef, body = validParsedJson)
 
       result.status                        shouldBe INTERNAL_SERVER_ERROR
       (result.json \ "code").as[String]    shouldBe "INTERNAL_SERVER_ERROR"
@@ -102,10 +98,10 @@ class GenerateReportControllerISpec extends BaseIntegrationSpec {
 
     "return 500 InternalServerError when generateReport throws an exception" in {
       stubAuth()
-      stubGenerateReport(aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER), zRef, year, month)
-      stubCallback(noContent, zRef, year, month)
+      stubGenerateReport(aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER), zRef)
+      stubCallback(noContent, zRef)
 
-      val result = generateRequest(zRef = zRef, year = year, month = month, body = validParsedJson)
+      val result = generateRequest(zRef = zRef, body = validParsedJson)
 
       result.status                        shouldBe INTERNAL_SERVER_ERROR
       (result.json \ "code").as[String]    shouldBe "INTERNAL_SERVER_ERROR"
@@ -114,7 +110,7 @@ class GenerateReportControllerISpec extends BaseIntegrationSpec {
 
     "return 400 BadRequest for invalid oversubscribed field" in {
       stubAuth()
-      val result = generateRequest(zRef = zRef, year = year, month = month, body = invalidParsedJson)
+      val result = generateRequest(zRef = zRef, body = invalidParsedJson)
 
       result.status shouldBe BAD_REQUEST
 
@@ -138,7 +134,7 @@ class GenerateReportControllerISpec extends BaseIntegrationSpec {
           |}
     """.stripMargin
 
-      val result = generateRequest(zRef = zRef, year = year, month = month, body = Json.parse(invalidJsonBody))
+      val result = generateRequest(zRef = zRef, body = Json.parse(invalidJsonBody))
 
       result.status shouldBe BAD_REQUEST
 
@@ -154,53 +150,19 @@ class GenerateReportControllerISpec extends BaseIntegrationSpec {
 
     "return 400 BadRequest when validation fails for zRef" in {
       stubAuth(invalidZRef)
-      val result = generateRequest(zRef = invalidZRef, year = year, month = month, body = validParsedJson)
+      val result = generateRequest(zRef = invalidZRef, body = validParsedJson)
 
       result.status                        shouldBe BAD_REQUEST
       (result.json \ "code").as[String]    shouldBe "INVALID_Z_REFERENCE"
       (result.json \ "message").as[String] shouldBe "Z reference is not formatted correctly"
     }
 
-    "return 400 BadRequest when validation fails for taxYear" in {
-      stubAuth()
-      val result = generateRequest(zRef = zRef, year = invalidYear, month = month, body = validParsedJson)
-
-      result.status                        shouldBe BAD_REQUEST
-      (result.json \ "code").as[String]    shouldBe "INVALID_TAX_YEAR"
-      (result.json \ "message").as[String] shouldBe "Tax year is not formatted correctly"
-    }
-
-    "return 400 BadRequest when validation fails for month" in {
-      stubAuth()
-      val result = generateRequest(zRef = zRef, year = year, month = invalidMonth, body = validParsedJson)
-
-      result.status                        shouldBe BAD_REQUEST
-      (result.json \ "code").as[String]    shouldBe "INVALID_MONTH"
-      (result.json \ "message").as[String] shouldBe "Month is not formatted correctly"
-    }
-
-    "return 400 BadRequest when validation fails for month, tax year & zref" in {
-      stubAuth(invalidZRef)
-      val result = generateRequest(zRef = invalidZRef, year = invalidYear, month = invalidMonth, body = validParsedJson)
-
-      result.status                        shouldBe BAD_REQUEST
-      (result.json \ "code").as[String]    shouldBe "BAD_REQUEST"
-      (result.json \ "message").as[String] shouldBe "Multiple issues found regarding your submission"
-
-      val errors = (result.json \ "errors").as[Seq[JsValue]]
-      errors.map(e => (e \ "code").as[String]) should contain allOf (
-        "INVALID_Z_REFERENCE",
-        "INVALID_TAX_YEAR",
-        "INVALID_MONTH"
-      )
-    }
-
     "return 400 BadRequest when validation fails when an empty request body is submitted" in {
       stubAuth()
-      stubGenerateReport(noContent, zRef, year, month)
-      stubCallback(noContent, zRef, year, month)
+      stubGenerateReport(noContent, zRef)
+      stubCallback(noContent, zRef)
 
-      val result = generateRawRequest(zRef = zRef, year = year, month = month, body = "")
+      val result = generateRawRequest(zRef = zRef, body = "")
 
       result.status                     shouldBe BAD_REQUEST
       (result.json \ "code").as[String] shouldBe "EMPTY_PAYLOAD"
@@ -210,10 +172,10 @@ class GenerateReportControllerISpec extends BaseIntegrationSpec {
 
     "return 400 BadRequest when validation fails when a whitespace request body is submitted" in {
       stubAuth()
-      stubGenerateReport(noContent, zRef, year, month)
-      stubCallback(noContent, zRef, year, month)
+      stubGenerateReport(noContent, zRef)
+      stubCallback(noContent, zRef)
 
-      val result = generateRawRequest(zRef = zRef, year = year, month = month, body = "   \n\t  ")
+      val result = generateRawRequest(zRef = zRef, body = "   \n\t  ")
 
       result.status                     shouldBe BAD_REQUEST
       (result.json \ "code").as[String] shouldBe "EMPTY_PAYLOAD"
@@ -223,10 +185,10 @@ class GenerateReportControllerISpec extends BaseIntegrationSpec {
 
     "return 400 BadRequest when malformed JSON is submitted" in {
       stubAuth()
-      stubGenerateReport(noContent, zRef, year, month)
-      stubCallback(noContent, zRef, year, month)
+      stubGenerateReport(noContent, zRef)
+      stubCallback(noContent, zRef)
 
-      val result = generateRawRequest(zRef = zRef, year = year, month = month, body = """{"oversubscribed": MALFORMED}""")
+      val result = generateRawRequest(zRef = zRef, body = """{"oversubscribed": MALFORMED}""")
 
       result.status                        shouldBe BAD_REQUEST
       (result.json \ "code").as[String]    shouldBe "MALFORMED_JSON"
@@ -238,12 +200,10 @@ class GenerateReportControllerISpec extends BaseIntegrationSpec {
       stubGenerateReport(
         badRequest(),
         zRef,
-        year,
-        month,
         Some("""{"code":"ISSUE_LIMIT_EXCEEDED","message":"You have exceeded the maximum allowed issues per reconciliation report"}""")
       )
 
-      val result = generateRequest(zRef = zRef, year = year, month = month, body = validParsedJson)
+      val result = generateRequest(zRef = zRef, body = validParsedJson)
 
       result.status                     shouldBe BAD_REQUEST
       (result.json \ "code").as[String] shouldBe "ISSUE_LIMIT_EXCEEDED"
@@ -253,7 +213,7 @@ class GenerateReportControllerISpec extends BaseIntegrationSpec {
 
     "return 401 UNAUTHORIZED when zref doesn't match enrolment" in {
       stubAuth("11111")
-      val result = generateRequest(zRef = zRef, year = year, month = month, body = validParsedJson)
+      val result = generateRequest(zRef = zRef, body = validParsedJson)
 
       result.status                        shouldBe UNAUTHORIZED
       (result.json \ "code").as[String]    shouldBe "UNAUTHORIZED"
@@ -262,28 +222,24 @@ class GenerateReportControllerISpec extends BaseIntegrationSpec {
   }
 
   def generateRequest(
-    zRef:  String,
-    year:  String,
-    month: String,
-    body:  JsValue
+    zRef: String,
+    body: JsValue
   ): WSResponse =
     await(
       ws.url(
-        s"http://localhost:$port/monthly/$zRef/$year/$month/reconciliation"
+        s"http://localhost:$port/monthly/$zRef/reconciliation"
       ).withHttpHeaders("Authorization" -> "Bearer 1234")
         .withFollowRedirects(follow = false)
         .post(body)
     )
 
   def generateRawRequest(
-    zRef:  String,
-    year:  String,
-    month: String,
-    body:  String
+    zRef: String,
+    body: String
   ): WSResponse =
     await(
       ws.url(
-        s"http://localhost:$port/monthly/$zRef/$year/$month/reconciliation"
+        s"http://localhost:$port/monthly/$zRef/reconciliation"
       ).withHttpHeaders(
         "Authorization" -> "Bearer 1234",
         "Content-Type"  -> "application/json"

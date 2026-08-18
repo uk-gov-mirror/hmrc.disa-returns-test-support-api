@@ -1,4 +1,4 @@
 # microservice specific routes
 
 
-POST /monthly/:zRef/:year/:month/reconciliation    uk.gov.hmrc.disareturnstestsupportapi.controllers.GenerateReportController.generateReport(zRef:String, year: String,month:String)
+POST /monthly/:zRef/reconciliation    uk.gov.hmrc.disareturnstestsupportapi.controllers.GenerateReportController.generateReport(zRef: String)

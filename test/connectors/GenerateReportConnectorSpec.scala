@@ -38,14 +38,12 @@ class GenerateReportConnectorSpec extends BaseUnitSpec {
     )
     val connector = new GenerateReportConnector(mockAppConfig, mockHttpClient, retryConfig, system)
 
-    val zref  = "Z1234"
-    val year  = "2025-26"
-    val month = "JAN"
+    val zref = "Z1234"
     val body: GenerateReportRequest = GenerateReportRequest(oversubscribed = 10, traceAndMatch = 20, failedEligibility = 12)
     val testUrl = "http://localhost:1204"
 
     when(mockAppConfig.disaReturnsStubsBaseUrl).thenReturn(testUrl)
-    when(mockHttpClient.post(url"$testUrl/test-only/$zref/$year/$month/reconciliation"))
+    when(mockHttpClient.post(url"$testUrl/test-only/$zref/reconciliation"))
       .thenReturn(mockRequestBuilder)
 
     when(mockRequestBuilder.withBody(any())(any(), any(), any()))
@@ -62,7 +60,7 @@ class GenerateReportConnectorSpec extends BaseUnitSpec {
       when(mockRequestBuilder.execute[Either[UpstreamErrorResponse, HttpResponse]](any(), any()))
         .thenReturn(Future.successful(Right(httpResponse)))
 
-      val result: GenerateReportResult = connector.generateReport(body, zref, year, month).futureValue
+      val result: GenerateReportResult = connector.generateReport(body, zref).futureValue
       result shouldBe GenerateReportResult.Success
     }
 
@@ -72,7 +70,7 @@ class GenerateReportConnectorSpec extends BaseUnitSpec {
         when(mockRequestBuilder.execute[Either[UpstreamErrorResponse, HttpResponse]](any(), any()))
           .thenReturn(Future.successful(Left(error)))
 
-        connector.generateReport(body, zref, year, month).futureValue shouldBe GenerateReportResult.Failure
+        connector.generateReport(body, zref).futureValue shouldBe GenerateReportResult.Failure
         verify(mockRequestBuilder, times(4)).execute[Either[UpstreamErrorResponse, HttpResponse]](any(), any())
       }
     }
@@ -81,7 +79,7 @@ class GenerateReportConnectorSpec extends BaseUnitSpec {
       when(mockRequestBuilder.execute[Either[UpstreamErrorResponse, HttpResponse]](any(), any()))
         .thenReturn(Future.failed(new RuntimeException("Timeout")))
       val result: GenerateReportResult = connector
-        .generateReport(body, zref, year, month)
+        .generateReport(body, zref)
         .recover { case _ =>
           GenerateReportResult.Failure
         }
@@ -103,7 +101,7 @@ class GenerateReportConnectorSpec extends BaseUnitSpec {
       when(mockRequestBuilder.execute[Either[UpstreamErrorResponse, HttpResponse]](any(), any()))
         .thenReturn(Future.successful(Left(error)))
 
-      val result: GenerateReportResult = connector.generateReport(body, zref, year, month).futureValue
+      val result: GenerateReportResult = connector.generateReport(body, zref).futureValue
       result shouldBe GenerateReportResult.IssueLimitExceeded
       verify(mockRequestBuilder, times(1)).execute[Either[UpstreamErrorResponse, HttpResponse]](any(), any())
     }

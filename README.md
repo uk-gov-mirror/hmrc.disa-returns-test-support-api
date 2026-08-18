@@ -23,7 +23,7 @@ The link provided in the return summary via the callback can then be utilised to
 
 | Path | Method | Auth          | Purpose                                                                    |
 |---|---|---------------|----------------------------------------------------------------------------|
-| `/:zRef/:year/:month/reconciliation` | **POST** | *X-Client-ID* | Simulate NPS reconciliation report generation for a given ZREF and period. |
+| `/monthly/:zRef/reconciliation` | **POST** | *X-Client-ID* | Simulate NPS reconciliation report generation for a given ZREF. |
 
 
 #### Path parameters
@@ -31,8 +31,6 @@ The link provided in the return summary via the callback can then be utilised to
 | Name | Type |   Example | Description | Constraints        |
 |---|---|----------:|---|--------------------|
 | `zRef` | `string` |   `Z1234` | ISA Manager reference for the return. | `^[z\|Z][0-9]{4}$` |
-| `year` | `string` | `2027-28` | Tax year of the return being reconciled. | `YYYY-YY`          |
-| `month` | `string` |       `JAN` | Month of the return being reconciled. | `MMM`               |
 
 #### Request body
 

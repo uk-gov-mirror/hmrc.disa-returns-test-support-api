@@ -34,40 +34,38 @@ class GenerateReportService @Inject() (
 
   def generateReport(
     req:         GenerateReportRequest,
-    zRef:        String,
-    year:        String,
-    month:       String
+    zRef:        String
   )(implicit hc: HeaderCarrier): Future[GenerateReportResult] =
     generateReportConnector
-      .generateReport(req, zRef, year, month)
+      .generateReport(req, zRef)
       .flatMap {
 
         case GenerateReportResult.Success =>
           callbackConnector
-            .callback(zRef, year, month, req.totalRecords)
+            .callback(zRef, req.totalRecords)
             .map {
               case CallbackResponse.Success =>
                 logger.info(
-                  s"[GenerateReportService][generateReport] Generate report successful zRef=$zRef year=$year month=$month"
+                  s"[GenerateReportService][generateReport] Generate report successful zRef=$zRef"
                 )
                 GenerateReportResult.Success
 
               case _ =>
                 logger.error(
-                  s"[GenerateReportService][generateReport] Callback failed zRef=$zRef year=$year month=$month"
+                  s"[GenerateReportService][generateReport] Callback failed zRef=$zRef"
                 )
                 GenerateReportResult.Failure
             }
 
         case GenerateReportResult.IssueLimitExceeded =>
           logger.warn(
-            s"[GenerateReportService][generateReport] Record limit exceeded zRef=$zRef year=$year month=$month"
+            s"[GenerateReportService][generateReport] Record limit exceeded zRef=$zRef"
           )
           Future.successful(GenerateReportResult.IssueLimitExceeded)
 
         case GenerateReportResult.Failure =>
           logger.error(
-            s"[GenerateReportService][generateReport] Generate report failed zRef=$zRef year=$year month=$month"
+            s"[GenerateReportService][generateReport] Generate report failed zRef=$zRef"
           )
           Future.successful(GenerateReportResult.Failure)
       }

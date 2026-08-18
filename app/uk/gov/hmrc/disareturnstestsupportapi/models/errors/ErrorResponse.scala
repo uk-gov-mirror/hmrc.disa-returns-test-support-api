@@ -37,16 +37,6 @@ case object InvalidZref extends ErrorResponse {
   val message = "Z reference is not formatted correctly"
 }
 
-case object InvalidTaxYear extends ErrorResponse {
-  val code    = "INVALID_TAX_YEAR"
-  val message = "Tax year is not formatted correctly"
-}
-
-case object InvalidMonth extends ErrorResponse {
-  val code    = "INVALID_MONTH"
-  val message = "Month is not formatted correctly"
-}
-
 case class EmptyPayload(
   code:    String = "EMPTY_PAYLOAD",
   message: String = "The payload is empty. Please ensure the request body contains a valid JSON payload before resubmitting."
@@ -94,16 +84,6 @@ case class UnauthorisedErr(code: String = "UNAUTHORIZED", message: String = "Una
 
 object UnauthorisedErr {
   implicit val format: OFormat[UnauthorisedErr] = Json.format[UnauthorisedErr]
-}
-
-case class MultipleErrorResponse(
-  code:    String = "BAD_REQUEST",
-  message: String = "Multiple issues found regarding your submission",
-  errors:  Seq[ErrorResponse]
-)
-
-object MultipleErrorResponse {
-  implicit val responseFormat: OWrites[MultipleErrorResponse] = Json.writes[MultipleErrorResponse]
 }
 
 case class FieldValidationError(

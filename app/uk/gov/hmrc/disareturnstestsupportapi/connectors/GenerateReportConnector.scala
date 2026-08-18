@@ -44,12 +44,10 @@ class GenerateReportConnector @Inject() (
 
   def generateReport(
     body:        GenerateReportRequest,
-    zRef:        String,
-    year:        String,
-    month:       String
+    zRef:        String
   )(implicit hc: HeaderCarrier): Future[GenerateReportResult] = {
 
-    val url = url"${config.disaReturnsStubsBaseUrl}/test-only/$zRef/$year/$month/reconciliation"
+    val url = url"${config.disaReturnsStubsBaseUrl}/test-only/$zRef/reconciliation"
     retryFor[HttpResponse]("generate reconciliation report")(retryCondition) {
       httpClient
         .post(url)

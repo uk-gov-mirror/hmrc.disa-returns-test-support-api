@@ -19,7 +19,7 @@ package controllers
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import play.api.http.Status.{BAD_REQUEST, INTERNAL_SERVER_ERROR, NO_CONTENT, UNAUTHORIZED}
-import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.libs.json.{JsValue, Json}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.{POST, contentAsJson, status}
 import uk.gov.hmrc.disareturnstestsupportapi.controllers.GenerateReportController
@@ -34,9 +34,7 @@ class GenerateReportControllerSpec extends BaseUnitSpec {
 
   private val controller = app.injector.instanceOf[GenerateReportController]
 
-  val zRef  = "Z1234"
-  val year  = "2025-26"
-  val month = "MAY"
+  val zRef = "Z1234"
 
   val validRequest: GenerateReportRequest = GenerateReportRequest(oversubscribed = 5, traceAndMatch = 20, failedEligibility = 6)
   val validJson:    JsValue               = Json.toJson(validRequest)
@@ -45,46 +43,46 @@ class GenerateReportControllerSpec extends BaseUnitSpec {
 
     "return 204 NoContent when both generateReport and callback succeed" in {
       authorizationForZRef()
-      when(mockGenerateReportConnector.generateReport(any(), any(), any(), any())(any()))
+      when(mockGenerateReportConnector.generateReport(any(), any())(any()))
         .thenReturn(Future.successful(GenerateReportResult.Success))
-      when(mockDisaReturnsCallbackConnector.callback(any(), any(), any(), any())(any()))
+      when(mockDisaReturnsCallbackConnector.callback(any(), any())(any()))
         .thenReturn(Future.successful(CallbackResponse.Success))
 
-      val request = FakeRequest(POST, s"/generate/$zRef/$year/$month")
+      val request = FakeRequest(POST, s"/monthly/$zRef/reconciliation")
         .withBody(validJson)
         .withHeaders("Content-Type" -> "application/json")
 
-      val result = controller.generateReport(zRef, year, month)(request)
+      val result = controller.generateReport(zRef)(request)
 
       status(result) shouldBe NO_CONTENT
     }
 
     "return 401 Unauthorised when enrolment zRef doesn't match request zref" in {
       authorizationForZRef("Z2222")
-      when(mockGenerateReportConnector.generateReport(any(), any(), any(), any())(any()))
+      when(mockGenerateReportConnector.generateReport(any(), any())(any()))
         .thenReturn(Future.successful(GenerateReportResult.Success))
-      when(mockDisaReturnsCallbackConnector.callback(any(), any(), any(), any())(any()))
+      when(mockDisaReturnsCallbackConnector.callback(any(), any())(any()))
         .thenReturn(Future.successful(CallbackResponse.Success))
 
-      val request = FakeRequest(POST, s"/generate/$zRef/$year/$month")
+      val request = FakeRequest(POST, s"/monthly/$zRef/reconciliation")
         .withBody(validJson)
         .withHeaders("Content-Type" -> "application/json")
 
-      val result = controller.generateReport(zRef, year, month)(request)
+      val result = controller.generateReport(zRef)(request)
 
       status(result) shouldBe UNAUTHORIZED
     }
 
     "return 500 InternalServerError when generateReport fails" in {
       authorizationForZRef()
-      when(mockGenerateReportConnector.generateReport(any(), any(), any(), any())(any()))
+      when(mockGenerateReportConnector.generateReport(any(), any())(any()))
         .thenReturn(Future.successful(GenerateReportResult.Failure))
 
-      val request = FakeRequest(POST, s"/generate/$zRef/$year/$month")
+      val request = FakeRequest(POST, s"/monthly/$zRef/reconciliation")
         .withBody(validJson)
         .withHeaders("Content-Type" -> "application/json")
 
-      val result = controller.generateReport(zRef, year, month)(request)
+      val result = controller.generateReport(zRef)(request)
 
       status(result)                                 shouldBe INTERNAL_SERVER_ERROR
       (contentAsJson(result) \ "code").as[String]    shouldBe "INTERNAL_SERVER_ERROR"
@@ -93,64 +91,49 @@ class GenerateReportControllerSpec extends BaseUnitSpec {
 
     "return 500 InternalServerError when callback fails" in {
       authorizationForZRef()
-      when(mockGenerateReportConnector.generateReport(any(), any(), any(), any())(any()))
+      when(mockGenerateReportConnector.generateReport(any(), any())(any()))
         .thenReturn(Future.successful(GenerateReportResult.Success))
-      when(mockDisaReturnsCallbackConnector.callback(any(), any(), any(), any())(any()))
+      when(mockDisaReturnsCallbackConnector.callback(any(), any())(any()))
         .thenReturn(Future.successful(CallbackResponse.Failure))
 
-      val request = FakeRequest(POST, s"/generate/$zRef/$year/$month")
+      val request = FakeRequest(POST, s"/monthly/$zRef/reconciliation")
         .withBody(validJson)
         .withHeaders("Content-Type" -> "application/json")
 
-      val result = controller.generateReport(zRef, year, month)(request)
+      val result = controller.generateReport(zRef)(request)
 
       status(result)                                 shouldBe INTERNAL_SERVER_ERROR
       (contentAsJson(result) \ "code").as[String]    shouldBe "INTERNAL_SERVER_ERROR"
       (contentAsJson(result) \ "message").as[String] shouldBe "There has been an issue processing your request"
     }
 
-    "return 400 BadRequest when zRef, year, and month are invalid" in {
-      val invalidzRef  = "z123333333"
-      val invalidYear  = "20AB"
-      val invalidMonth = "13"
+    "return 400 BadRequest when zRef is invalid" in {
+      val invalidzRef = "z123333333"
       authorizationForZRef(invalidzRef)
 
-      val request = FakeRequest(POST, s"/generate/$invalidzRef/$invalidYear/$invalidMonth")
+      val request = FakeRequest(POST, s"/monthly/$invalidzRef/reconciliation")
         .withBody(validJson)
         .withHeaders("Content-Type" -> "application/json")
 
-      val result = controller.generateReport(invalidzRef, invalidYear, invalidMonth)(request)
+      val result = controller.generateReport(invalidzRef)(request)
 
       status(result) shouldBe BAD_REQUEST
       val json = contentAsJson(result)
-      (json \ "code").as[String]    shouldBe "BAD_REQUEST"
-      (json \ "message").as[String] shouldBe "Multiple issues found regarding your submission"
-
-      val errors: Seq[(String, String)] =
-        (json \ "errors")
-          .as[Seq[JsObject]]
-          .map { obj =>
-            ((obj \ "code").as[String], (obj \ "message").as[String])
-          }
-
-      errors shouldBe Seq(
-        "INVALID_Z_REFERENCE" -> "Z reference is not formatted correctly",
-        "INVALID_TAX_YEAR"    -> "Tax year is not formatted correctly",
-        "INVALID_MONTH"       -> "Month is not formatted correctly"
-      )
+      (json \ "code").as[String]    shouldBe "INVALID_Z_REFERENCE"
+      (json \ "message").as[String] shouldBe "Z reference is not formatted correctly"
     }
 
     "return 400 BadRequest when the issue limit is exceeded" in {
       authorizationForZRef()
 
-      when(mockGenerateReportConnector.generateReport(any(), any(), any(), any())(any()))
+      when(mockGenerateReportConnector.generateReport(any(), any())(any()))
         .thenReturn(Future.successful(GenerateReportResult.IssueLimitExceeded))
 
-      val request = FakeRequest(POST, s"/generate/$zRef/$year/$month")
+      val request = FakeRequest(POST, s"/monthly/$zRef/reconciliation")
         .withBody(validJson)
         .withHeaders("Content-Type" -> "application/json")
 
-      val result = controller.generateReport(zRef, year, month)(request)
+      val result = controller.generateReport(zRef)(request)
 
       status(result) shouldBe BAD_REQUEST
 
@@ -163,14 +146,14 @@ class GenerateReportControllerSpec extends BaseUnitSpec {
 
     "return 500 InternalServerError when generateReport throws an exception (recover block)" in {
       authorizationForZRef()
-      when(mockGenerateReportConnector.generateReport(any(), any(), any(), any())(any()))
+      when(mockGenerateReportConnector.generateReport(any(), any())(any()))
         .thenReturn(Future.failed(new RuntimeException("fail")))
 
-      val request = FakeRequest(POST, s"/generate/$zRef/$year/$month")
+      val request = FakeRequest(POST, s"/monthly/$zRef/reconciliation")
         .withBody(validJson)
         .withHeaders("Content-Type" -> "application/json")
 
-      val result = controller.generateReport(zRef, year, month)(request)
+      val result = controller.generateReport(zRef)(request)
 
       status(result)                                 shouldBe INTERNAL_SERVER_ERROR
       (contentAsJson(result) \ "code").as[String]    shouldBe "INTERNAL_SERVER_ERROR"

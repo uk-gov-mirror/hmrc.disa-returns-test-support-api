@@ -28,9 +28,7 @@ import utils.BaseIntegrationSpec
 class GenerateReportConnectorISpec extends BaseIntegrationSpec {
 
   private val zRef       = "Z1234"
-  private val year       = "2025-26"
-  private val month      = "FEB"
-  private val reportPath = s"/test-only/$zRef/$year/$month/reconciliation"
+  private val reportPath = s"/test-only/$zRef/reconciliation"
   private val reportBody = GenerateReportRequest(oversubscribed = 1, traceAndMatch = 2, failedEligibility = 3)
 
   private lazy val connector = app.injector.instanceOf[GenerateReportConnector]
@@ -39,7 +37,7 @@ class GenerateReportConnectorISpec extends BaseIntegrationSpec {
     "make four requests for persistent 5xx responses" in {
       stubFor(post(urlEqualTo(reportPath)).willReturn(aResponse().withStatus(SERVICE_UNAVAILABLE)))
 
-      await(connector.generateReport(reportBody, zRef, year, month)) shouldBe GenerateReportResult.Failure
+      await(connector.generateReport(reportBody, zRef)) shouldBe GenerateReportResult.Failure
       verify(4, postRequestedFor(urlEqualTo(reportPath)))
     }
 
@@ -58,14 +56,14 @@ class GenerateReportConnectorISpec extends BaseIntegrationSpec {
           .willReturn(aResponse().withStatus(NO_CONTENT))
       )
 
-      await(connector.generateReport(reportBody, zRef, year, month)) shouldBe GenerateReportResult.Success
+      await(connector.generateReport(reportBody, zRef)) shouldBe GenerateReportResult.Success
       verify(2, postRequestedFor(urlEqualTo(reportPath)))
     }
 
     "make one request for a 4xx response" in {
       stubFor(post(urlEqualTo(reportPath)).willReturn(aResponse().withStatus(BAD_REQUEST).withBody("{}")))
 
-      await(connector.generateReport(reportBody, zRef, year, month)) shouldBe GenerateReportResult.Failure
+      await(connector.generateReport(reportBody, zRef)) shouldBe GenerateReportResult.Failure
       verify(1, postRequestedFor(urlEqualTo(reportPath)))
     }
   }

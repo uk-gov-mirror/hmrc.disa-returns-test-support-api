@@ -31,7 +31,7 @@ tags:
 #      Open Question - since we can reasonably assume they might want to be more specific, what does that endpoint look like?
 
 paths:
-  /monthly/{zReference}/{taxYear}/{month}/reconciliation:
+  /monthly/{zReference}/reconciliation:
     post:
       summary: Generate test reconciliation report
       description: |
@@ -46,7 +46,7 @@ paths:
         Instead, a monthly return summary and reconciliation report are made available to the ISA Returns API, 
         and a push-pull notification (PPNS) is triggered.
         
-        Note: Each reconciliation report generation is limited to a maximum of 2,000 issues across all issue types per Z-reference, tax year, and month. Attempts to exceed this limit will result in an error.
+        Note: Each reconciliation report generation is limited to a maximum of 2,000 issues across all issue types per Z-reference. Attempts to exceed this limit will result in an error.
       operationId: generateTestReconciliationReport
       tags:
         - Test reconciliation
@@ -65,40 +65,6 @@ paths:
             pattern: ^[z|Z][0-9]{4}$
             type: string
             example: Z1234
-        - name: taxYear
-          in: path
-          description: |
-            Tax year of the report.
-          required: true
-          style: simple
-          explode: false
-          schema:
-            pattern: ^20\d{2}-\d{2}$
-            format: string
-            example: 2025-26
-        - name: month
-          in: path
-          description: |
-            Month of the report.
-          required: true
-          style: simple
-          explode: false
-          schema:
-            type: string
-            example: APR
-            enum:
-              - JAN
-              - FEB
-              - MAR
-              - APR
-              - MAY
-              - JUN
-              - JUL
-              - AUG
-              - SEP
-              - OCT
-              - NOV
-              - DEC
         - $ref: '#/components/parameters/acceptHeader'
         - $ref: '#/components/parameters/authorizationHeader'
       requestBody:
@@ -118,7 +84,6 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/badSubmissionGeneral'
                   - $ref: '#/components/schemas/badSubmissionComplex'
-                  - $ref: '#/components/schemas/badRequestParametersMultipleErrors'
         401:
           description: Unauthorized
           content:
@@ -210,8 +175,6 @@ components:
           type: string
           description: Code indicating the type of error.
           enum:
-            - INVALID_TAX_YEAR
-            - INVALID_MONTH
             - INVALID_Z_REFERENCE
             - MALFORMED_JSON
             - EMPTY_PAYLOAD
@@ -273,34 +236,6 @@ components:
           type: string
           description: JSON pointer path to the field that failed validation.
           example: /oversubscribed
-    invalidTaxYear:
-      title: Invalid Tax Year
-      type: object
-      properties:
-        code:
-          type: string
-          description: Code indicating the type of error.
-          enum:
-            - INVALID_TAX_YEAR
-        message:
-          title: Message
-          type: string
-          description: Human-readable message outlining the error.
-          example: "Invalid tax year provided"
-    invalidMonth:
-      title: Invalid Month
-      type: object
-      properties:
-        code:
-          type: string
-          description: Code indicating the type of error.
-          enum:
-            - INVALID_MONTH
-        message:
-          title: Message
-          type: string
-          description: Human-readable message outlining the error.
-          example: "Invalid month provided"
     invalidZReference:
       title: Invalid Z-Reference
       type: object
@@ -315,32 +250,3 @@ components:
           type: string
           description: Human-readable message outlining the error.
           example: "Invalid z-reference provided"
-    badRequestParametersMultipleErrors:
-      title: Bad Request Parameters (Multiple Errors)
-      type: object
-      properties:
-        code:
-          title: Error Code Type
-          type: string
-          description: Code indicating the type of error.
-          enum:
-            - BAD_REQUEST
-        message:
-          title: Message
-          type: string
-          description: Human-readable message outlining the error.
-          example: "Multiple issues found regarding your submission"
-        errors:
-          title: Errors
-          type: array
-          description: Array of errors outlining issues found regarding your submission.
-          items:
-            anyOf:
-              - $ref: '#/components/schemas/invalidTaxYear'
-              - $ref: '#/components/schemas/invalidMonth'
-              - $ref: '#/components/schemas/invalidZReference'
-          example:
-            - code: INVALID_TAX_YEAR
-              message: Invalid tax year provided
-            - code: INVALID_MONTH
-              message: Invalid month provided

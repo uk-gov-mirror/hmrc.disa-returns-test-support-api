@@ -54,8 +54,6 @@ trait CommonStubs {
   def stubGenerateReport(
     status:       ResponseDefinitionBuilder,
     zRef:         String,
-    year:         String,
-    month:        String,
     responseBody: Option[String] = None
   ): Unit = {
 
@@ -65,14 +63,14 @@ trait CommonStubs {
     }
 
     stubFor(
-      post(urlEqualTo(s"/test-only/$zRef/$year/$month/reconciliation"))
+      post(urlEqualTo(s"/test-only/$zRef/reconciliation"))
         .willReturn(responseWithBody)
     )
   }
 
-  def stubCallback(status: ResponseDefinitionBuilder, zRef: String, year: String, month: String): Unit =
+  def stubCallback(status: ResponseDefinitionBuilder, zRef: String): Unit =
     stubFor(
-      post(urlEqualTo(s"/callback/monthly/$zRef/$year/$month"))
+      post(urlEqualTo(s"/callback/monthly/$zRef"))
         .willReturn(status)
     )
 

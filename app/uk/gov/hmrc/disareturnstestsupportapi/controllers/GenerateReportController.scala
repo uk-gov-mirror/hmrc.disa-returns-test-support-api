@@ -44,7 +44,7 @@ class GenerateReportController @Inject() (
     extends AbstractController(cc)
     with Logging {
 
-  def generateReport(zRef: String, year: String, month: String): Action[JsValue] =
+  def generateReport(zRef: String): Action[JsValue] =
     Action.async(strictJsonBodyParser) { implicit request =>
       implicit val hc: HeaderCarrier =
         HeaderCarrierConverter.fromRequest(request)
@@ -53,17 +53,17 @@ class GenerateReportController @Inject() (
           Future.successful(errorResult)
 
         case Right(req) =>
-          validateParams(zRef, year, month) match {
+          validateZRef(zRef) match {
             case Left(errorResult) =>
               Future.successful(errorResult)
 
-            case Right((validZRef, y, m)) =>
+            case Right(validZRef) =>
               authAction(validZRef)
                 .invokeBlock(
                   request,
                   (_: Request[JsValue]) =>
                     generateReportService
-                      .generateReport(req, validZRef, y, m)
+                      .generateReport(req, validZRef)
                       .map {
                         case GenerateReportResult.Success =>
                           NoContent
@@ -75,7 +75,7 @@ class GenerateReportController @Inject() (
                 )
                 .recover { case e =>
                   logger.error(
-                    s"[GenerateReportController][generateReport] Unexpected error zRef=$zRef year=$year month=$month",
+                    s"[GenerateReportController][generateReport] Unexpected error zRef=$zRef",
                     e
                   )
                   InternalServerError(Json.toJson(InternalServerErr()))
@@ -84,31 +84,10 @@ class GenerateReportController @Inject() (
       }
     }
 
-  private def validateParams(
-    zRef:  String,
-    year:  String,
-    month: String
-  ): Either[Result, (String, String, String)] = {
-
-    val paramErrors: Seq[ErrorResponse] = List(
-      Option.unless(IsaRefValidator.isValid(zRef))(InvalidZref),
-      Option.unless(TaxYearValidator.isValid(year))(InvalidTaxYear),
-      Option.unless(MonthValidator.isValid(month))(InvalidMonth)
-    ).flatten
-
-    paramErrors match {
-      case Nil =>
-        Right((zRef.toUpperCase, year, month))
-
-      case singleError :: Nil =>
-        Left(BadRequest(Json.toJson(singleError)))
-
-      case multipleErrors =>
-        Left(
-          BadRequest(
-            Json.toJson(MultipleErrorResponse(errors = multipleErrors))
-          )
-        )
-    }
-  }
+  private def validateZRef(zRef: String): Either[Result, String] =
+    Either.cond(
+      IsaRefValidator.isValid(zRef),
+      zRef.toUpperCase,
+      BadRequest(Json.toJson[ErrorResponse](InvalidZref))
+    )
 }

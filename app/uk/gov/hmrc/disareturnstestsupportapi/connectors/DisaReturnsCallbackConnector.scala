@@ -39,8 +39,8 @@ class DisaReturnsCallbackConnector @Inject() (
     extends BaseConnector
     with Logging {
 
-  def callback(zRef: String, year: String, month: String, totalRecords: Int)(implicit hc: HeaderCarrier): Future[CallbackResponse] = {
-    val url  = url"${config.disaReturnsBaseUrl}/callback/monthly/$zRef/$year/$month"
+  def callback(zRef: String, totalRecords: Int)(implicit hc: HeaderCarrier): Future[CallbackResponse] = {
+    val url  = url"${config.disaReturnsBaseUrl}/callback/monthly/$zRef"
     val body = CallbackRequest(totalRecords)
     retryFor[HttpResponse]("send DISA returns callback")(retryCondition) {
       httpClient

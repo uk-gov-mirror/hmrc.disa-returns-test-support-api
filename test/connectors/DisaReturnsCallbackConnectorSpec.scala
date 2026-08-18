@@ -38,13 +38,11 @@ class DisaReturnsCallbackConnectorSpec extends BaseUnitSpec {
     val connector = new DisaReturnsCallbackConnector(mockAppConfig, mockHttpClient, retryConfig, system)
 
     val zref         = "Z1234"
-    val year         = "2025-26"
-    val month        = "FEB"
     val totalRecords = 42
     val testUrl      = "http://localhost:1200"
 
     when(mockAppConfig.disaReturnsBaseUrl).thenReturn(testUrl)
-    when(mockHttpClient.post(url"$testUrl/callback/monthly/$zref/$year/$month")).thenReturn(mockRequestBuilder)
+    when(mockHttpClient.post(url"$testUrl/callback/monthly/$zref")).thenReturn(mockRequestBuilder)
 
     when(mockRequestBuilder.withBody(any())(any(), any(), any()))
       .thenReturn(mockRequestBuilder)
@@ -57,7 +55,7 @@ class DisaReturnsCallbackConnectorSpec extends BaseUnitSpec {
       when(mockRequestBuilder.execute[Either[UpstreamErrorResponse, HttpResponse]](any(), any()))
         .thenReturn(Future.successful(Right(httpResponse)))
 
-      val result: CallbackResponse = connector.callback(zref, year, month, totalRecords).futureValue
+      val result: CallbackResponse = connector.callback(zref, totalRecords).futureValue
       result shouldBe CallbackResponse.Success
     }
 
@@ -67,7 +65,7 @@ class DisaReturnsCallbackConnectorSpec extends BaseUnitSpec {
         when(mockRequestBuilder.execute[Either[UpstreamErrorResponse, HttpResponse]](any(), any()))
           .thenReturn(Future.successful(Left(error)))
 
-        connector.callback(zref, year, month, totalRecords).futureValue shouldBe CallbackResponse.Failure
+        connector.callback(zref, totalRecords).futureValue shouldBe CallbackResponse.Failure
         verify(mockRequestBuilder, times(4)).execute[Either[UpstreamErrorResponse, HttpResponse]](any(), any())
       }
     }
@@ -77,7 +75,7 @@ class DisaReturnsCallbackConnectorSpec extends BaseUnitSpec {
       when(mockRequestBuilder.execute[Either[UpstreamErrorResponse, HttpResponse]](any(), any()))
         .thenReturn(Future.successful(Left(error)))
 
-      connector.callback(zref, year, month, totalRecords).futureValue shouldBe CallbackResponse.Failure
+      connector.callback(zref, totalRecords).futureValue shouldBe CallbackResponse.Failure
       verify(mockRequestBuilder, times(1)).execute[Either[UpstreamErrorResponse, HttpResponse]](any(), any())
     }
 
@@ -86,7 +84,7 @@ class DisaReturnsCallbackConnectorSpec extends BaseUnitSpec {
         .thenReturn(Future.failed(new RuntimeException("Timeout")))
 
       val result: CallbackResponse = connector
-        .callback(zref, year, month, totalRecords)
+        .callback(zref, totalRecords)
         .recover { case _ =>
           CallbackResponse.Failure
         }

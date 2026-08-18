@@ -17,7 +17,5 @@
 package utils
 
 trait TestData {
-  val validZRef:     String = "Z1234"
-  val validTaxYear:  String = "2026-27"
-  val validMonthStr: String = "SEP"
+  val validZRef: String = "Z1234"
 }
