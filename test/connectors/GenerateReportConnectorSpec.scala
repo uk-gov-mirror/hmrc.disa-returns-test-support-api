@@ -25,6 +25,7 @@ import uk.gov.hmrc.disareturnstestsupportapi.models.GenerateReportRequest
 import uk.gov.hmrc.disareturnstestsupportapi.models.errors.GenerateReportResult
 import uk.gov.hmrc.http.{HttpResponse, StringContextOps, UpstreamErrorResponse}
 import utils.BaseUnitSpec
+import utils.TestConstants.validZReference
 
 import scala.concurrent.Future
 
@@ -38,12 +39,12 @@ class GenerateReportConnectorSpec extends BaseUnitSpec {
     )
     val connector = new GenerateReportConnector(mockAppConfig, mockHttpClient, retryConfig, system)
 
-    val zref = "Z1234"
+    val zref = validZReference
     val body: GenerateReportRequest = GenerateReportRequest(oversubscribed = 10, traceAndMatch = 20, failedEligibility = 12)
     val testUrl = "http://localhost:1204"
 
     when(mockAppConfig.disaReturnsStubsBaseUrl).thenReturn(testUrl)
-    when(mockHttpClient.post(url"$testUrl/test-only/$zref/reconciliation"))
+    when(mockHttpClient.post(url"$testUrl/monthly/$zref/reconciliation"))
       .thenReturn(mockRequestBuilder)
 
     when(mockRequestBuilder.withBody(any())(any(), any(), any()))

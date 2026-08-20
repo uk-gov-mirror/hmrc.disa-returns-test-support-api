@@ -21,9 +21,10 @@ Once called, this procedure will make calls to both `disa-returns` NPS callback 
 
 The link provided in the return summary via the callback can then be utilised to retrieve the report on the stub, as it would be from NPS.
 
-| Path | Method | Auth          | Purpose                                                                    |
-|---|---|---------------|----------------------------------------------------------------------------|
-| `/monthly/:zRef/reconciliation` | **POST** | *X-Client-ID* | Simulate NPS reconciliation report generation for a given ZREF. |
+| Path | Method | Auth          | Purpose                                                               |
+|---|---|---------------|-----------------------------------------------------------------------|
+| `/monthly/:zRef/reconciliation` | **POST** | *X-Client-ID* | Simulate NPS reconciliation report generation for a given ZREF.       |
+| `/monthly/:zRef/reporting-window-override` | **PUT** | OAuth bearer token | Temporarily override the reporting window for the authenticated user. |
 
 
 #### Path parameters
@@ -38,11 +39,35 @@ The body should be a JSON representation of the following case class:
 
 ```scala
 case class GenerateReportRequest(
-                                  oversubscribed:    Int,
-                                  traceAndMatch:     Int,
-                                  failedEligibility: Int
-                                )
+  oversubscribed:    Int,
+  traceAndMatch:     Int,
+  failedEligibility: Int
+)
 ```
+
+### Override the reporting window
+
+This endpoint enables an authenticated user to test the monthly returns journey outside a live reporting period.
+
+The override is associated with the credential ID obtained from the caller's authenticated session. It only affects that user and replaces any override they previously configured.
+
+```http
+PUT /monthly/Z1234/reporting-window-override
+Content-Type: application/json
+Authorization: Bearer <access-token>
+Accept: application/vnd.hmrc.1.0+json
+```
+
+```json
+{
+  "startDate": "2026-08-13T00:00:00Z",
+  "endDate": "2026-08-31T23:59:59Z"
+}
+```
+
+Both fields are required RFC3339 date-time values with a timezone. `startDate` must be before or equal to `endDate`, and both boundaries are inclusive.
+
+A successful request returns `204 No Content`. The override lasts for one hour from the most recent successful request. The system clock is not changed or mocked. When the override expires, normal reporting-period validation resumes automatically.
 
 ## Running the app
 

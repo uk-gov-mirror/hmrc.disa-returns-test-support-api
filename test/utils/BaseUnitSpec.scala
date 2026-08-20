@@ -31,7 +31,7 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.DefaultAwaitTimeout
 import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.disareturnstestsupportapi.config.AppConfig
-import uk.gov.hmrc.disareturnstestsupportapi.connectors.{DisaReturnsCallbackConnector, GenerateReportConnector}
+import uk.gov.hmrc.disareturnstestsupportapi.connectors.{DisaReturnsCallbackConnector, GenerateReportConnector, ReportingWindowOverrideConnector}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.client.{HttpClientV2, RequestBuilder}
 
@@ -54,20 +54,31 @@ abstract class BaseUnitSpec
   implicit val system: ActorSystem      = ActorSystem("TestSystem")
   implicit val mat:    Materializer     = SystemMaterializer(system).materializer
 
-  override def beforeEach(): Unit = Mockito.reset()
+  override def beforeEach(): Unit =
+    Mockito.reset(
+      mockAuthConnector,
+      mockHttpClient,
+      mockAppConfig,
+      mockRequestBuilder,
+      mockGenerateReportConnector,
+      mockDisaReturnsCallbackConnector,
+      mockReportingWindowOverrideConnector
+    )
 
-  val mockHttpClient:                   HttpClientV2                 = mock[HttpClientV2]
-  val mockAppConfig:                    AppConfig                    = mock[AppConfig]
-  val mockRequestBuilder:               RequestBuilder               = mock[RequestBuilder]
-  val mockGenerateReportConnector:      GenerateReportConnector      = mock[GenerateReportConnector]
-  val mockDisaReturnsCallbackConnector: DisaReturnsCallbackConnector = mock[DisaReturnsCallbackConnector]
+  val mockHttpClient:                       HttpClientV2                     = mock[HttpClientV2]
+  val mockAppConfig:                        AppConfig                        = mock[AppConfig]
+  val mockRequestBuilder:                   RequestBuilder                   = mock[RequestBuilder]
+  val mockGenerateReportConnector:          GenerateReportConnector          = mock[GenerateReportConnector]
+  val mockDisaReturnsCallbackConnector:     DisaReturnsCallbackConnector     = mock[DisaReturnsCallbackConnector]
+  val mockReportingWindowOverrideConnector: ReportingWindowOverrideConnector = mock[ReportingWindowOverrideConnector]
 
   override def fakeApplication(): Application = GuiceApplicationBuilder()
     .overrides(
       bind[AuthConnector].toInstance(mockAuthConnector),
       bind[AppConfig].toInstance(mockAppConfig),
       bind[DisaReturnsCallbackConnector].toInstance(mockDisaReturnsCallbackConnector),
-      bind[GenerateReportConnector].toInstance(mockGenerateReportConnector)
+      bind[GenerateReportConnector].toInstance(mockGenerateReportConnector),
+      bind[ReportingWindowOverrideConnector].toInstance(mockReportingWindowOverrideConnector)
     )
     .build()
 }

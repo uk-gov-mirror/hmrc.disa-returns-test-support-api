@@ -16,6 +16,7 @@
 
 package controllers
 
+import play.api.http.MimeTypes.{BINARY, JSON}
 import play.api.http.Status.OK
 import play.api.test.FakeRequest
 import play.api.test.Helpers.{GET, contentAsString, contentType, route, status, writeableOf_AnyContentAsEmpty}
@@ -29,7 +30,7 @@ class DocumentationControllerISpec extends BaseIntegrationSpec {
       val result  = route(app, request).get
 
       status(result)        shouldBe OK
-      contentType(result)   shouldBe Some("application/json")
+      contentType(result)   shouldBe Some(JSON)
       contentAsString(result) should include("api")
     }
   }
@@ -40,7 +41,7 @@ class DocumentationControllerISpec extends BaseIntegrationSpec {
       val result  = route(app, request).get
 
       status(result)        shouldBe OK
-      contentType(result)   shouldBe Some("application/octet-stream")
+      contentType(result)   shouldBe Some(BINARY)
       contentAsString(result) should include("openapi")
     }
   }

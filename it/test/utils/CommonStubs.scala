@@ -23,14 +23,21 @@ import play.api.http.Status.OK
 
 trait CommonStubs {
 
-  def stubAuth(zRef: String = "Z1234"): Unit = {
+  def stubAuth(
+    zRef:   String = TestConstants.validZReference,
+    credId: String = TestConstants.testCredentialId
+  ): Unit = {
     val validEnrolment =
       s"""{
       "authorisedEnrolments": [{
         "key": "HMRC-DISA-ORG",
         "identifiers": [{ "key": "ZREF", "value": "$zRef" }],
         "state": "Activated"
-      }]
+      }],
+      "optionalCredentials": {
+        "providerId": "$credId",
+        "providerType": "GovernmentGateway"
+      }
       }"""
 
     stubFor {
@@ -63,7 +70,7 @@ trait CommonStubs {
     }
 
     stubFor(
-      post(urlEqualTo(s"/test-only/$zRef/reconciliation"))
+      post(urlEqualTo(s"/monthly/$zRef/reconciliation"))
         .willReturn(responseWithBody)
     )
   }
@@ -71,6 +78,13 @@ trait CommonStubs {
   def stubCallback(status: ResponseDefinitionBuilder, zRef: String): Unit =
     stubFor(
       post(urlEqualTo(s"/callback/monthly/$zRef"))
+        .willReturn(status)
+    )
+
+  def stubReportingWindowOverride(status: ResponseDefinitionBuilder, credId: String): Unit =
+    stubFor(
+      put(urlEqualTo("/reporting-window-override"))
+        .withHeader("X-Cred-Id", equalTo(credId))
         .willReturn(status)
     )
 

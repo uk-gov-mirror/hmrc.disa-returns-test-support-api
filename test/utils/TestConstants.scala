@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,13 @@
 
 package utils
 
-trait TestData {
-  val validZRef: String = TestConstants.validZReference
+import java.time.Instant
+
+object TestConstants {
+  val validZReference:  String = "Z1234"
+  val testCredentialId: String = "cred-id"
+  val bearerToken:      String = "Bearer 1234"
+
+  val reportingWindowStart: Instant = Instant.parse("2026-08-13T00:00:00Z")
+  val reportingWindowEnd:   Instant = Instant.parse("2026-08-31T23:59:59Z")
 }

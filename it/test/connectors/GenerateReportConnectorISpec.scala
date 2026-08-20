@@ -24,11 +24,12 @@ import uk.gov.hmrc.disareturnstestsupportapi.connectors.GenerateReportConnector
 import uk.gov.hmrc.disareturnstestsupportapi.models.GenerateReportRequest
 import uk.gov.hmrc.disareturnstestsupportapi.models.errors.GenerateReportResult
 import utils.BaseIntegrationSpec
+import utils.TestConstants.validZReference
 
 class GenerateReportConnectorISpec extends BaseIntegrationSpec {
 
-  private val zRef       = "Z1234"
-  private val reportPath = s"/test-only/$zRef/reconciliation"
+  private val zRef       = validZReference
+  private val reportPath = s"/monthly/$zRef/reconciliation"
   private val reportBody = GenerateReportRequest(oversubscribed = 1, traceAndMatch = 2, failedEligibility = 3)
 
   private lazy val connector = app.injector.instanceOf[GenerateReportConnector]

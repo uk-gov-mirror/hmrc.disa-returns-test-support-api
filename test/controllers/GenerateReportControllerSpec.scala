@@ -18,6 +18,8 @@ package controllers
 
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
+import play.api.http.HeaderNames.CONTENT_TYPE
+import play.api.http.MimeTypes.JSON
 import play.api.http.Status.{BAD_REQUEST, INTERNAL_SERVER_ERROR, NO_CONTENT, UNAUTHORIZED}
 import play.api.libs.json.{JsValue, Json}
 import play.api.test.FakeRequest
@@ -27,6 +29,7 @@ import uk.gov.hmrc.disareturnstestsupportapi.models.GenerateReportRequest
 import uk.gov.hmrc.disareturnstestsupportapi.models.callback.CallbackResponse
 import uk.gov.hmrc.disareturnstestsupportapi.models.errors.GenerateReportResult
 import utils.BaseUnitSpec
+import utils.TestConstants.validZReference
 
 import scala.concurrent.Future
 
@@ -34,7 +37,7 @@ class GenerateReportControllerSpec extends BaseUnitSpec {
 
   private val controller = app.injector.instanceOf[GenerateReportController]
 
-  val zRef = "Z1234"
+  val zRef = validZReference
 
   val validRequest: GenerateReportRequest = GenerateReportRequest(oversubscribed = 5, traceAndMatch = 20, failedEligibility = 6)
   val validJson:    JsValue               = Json.toJson(validRequest)
@@ -50,7 +53,7 @@ class GenerateReportControllerSpec extends BaseUnitSpec {
 
       val request = FakeRequest(POST, s"/monthly/$zRef/reconciliation")
         .withBody(validJson)
-        .withHeaders("Content-Type" -> "application/json")
+        .withHeaders(CONTENT_TYPE -> JSON)
 
       val result = controller.generateReport(zRef)(request)
 
@@ -66,7 +69,7 @@ class GenerateReportControllerSpec extends BaseUnitSpec {
 
       val request = FakeRequest(POST, s"/monthly/$zRef/reconciliation")
         .withBody(validJson)
-        .withHeaders("Content-Type" -> "application/json")
+        .withHeaders(CONTENT_TYPE -> JSON)
 
       val result = controller.generateReport(zRef)(request)
 
@@ -80,7 +83,7 @@ class GenerateReportControllerSpec extends BaseUnitSpec {
 
       val request = FakeRequest(POST, s"/monthly/$zRef/reconciliation")
         .withBody(validJson)
-        .withHeaders("Content-Type" -> "application/json")
+        .withHeaders(CONTENT_TYPE -> JSON)
 
       val result = controller.generateReport(zRef)(request)
 
@@ -98,7 +101,7 @@ class GenerateReportControllerSpec extends BaseUnitSpec {
 
       val request = FakeRequest(POST, s"/monthly/$zRef/reconciliation")
         .withBody(validJson)
-        .withHeaders("Content-Type" -> "application/json")
+        .withHeaders(CONTENT_TYPE -> JSON)
 
       val result = controller.generateReport(zRef)(request)
 
@@ -113,7 +116,7 @@ class GenerateReportControllerSpec extends BaseUnitSpec {
 
       val request = FakeRequest(POST, s"/monthly/$invalidzRef/reconciliation")
         .withBody(validJson)
-        .withHeaders("Content-Type" -> "application/json")
+        .withHeaders(CONTENT_TYPE -> JSON)
 
       val result = controller.generateReport(invalidzRef)(request)
 
@@ -131,7 +134,7 @@ class GenerateReportControllerSpec extends BaseUnitSpec {
 
       val request = FakeRequest(POST, s"/monthly/$zRef/reconciliation")
         .withBody(validJson)
-        .withHeaders("Content-Type" -> "application/json")
+        .withHeaders(CONTENT_TYPE -> JSON)
 
       val result = controller.generateReport(zRef)(request)
 
@@ -151,7 +154,7 @@ class GenerateReportControllerSpec extends BaseUnitSpec {
 
       val request = FakeRequest(POST, s"/monthly/$zRef/reconciliation")
         .withBody(validJson)
-        .withHeaders("Content-Type" -> "application/json")
+        .withHeaders(CONTENT_TYPE -> JSON)
 
       val result = controller.generateReport(zRef)(request)
 

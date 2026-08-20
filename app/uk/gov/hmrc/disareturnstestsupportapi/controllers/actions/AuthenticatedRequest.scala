@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-package utils
+package uk.gov.hmrc.disareturnstestsupportapi.controllers.actions
 
-trait TestData {
-  val validZRef: String = TestConstants.validZReference
-}
+import play.api.mvc.{Request, WrappedRequest}
+
+final case class AuthenticatedRequest[A](request: Request[A], credId: String) extends WrappedRequest[A](request)

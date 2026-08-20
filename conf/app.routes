@@ -2,3 +2,5 @@
 
 
 POST /monthly/:zRef/reconciliation    uk.gov.hmrc.disareturnstestsupportapi.controllers.GenerateReportController.generateReport(zRef: String)
+
+PUT  /monthly/:zRef/reporting-window-override    uk.gov.hmrc.disareturnstestsupportapi.controllers.ReportingWindowOverrideController.set(zRef: String)

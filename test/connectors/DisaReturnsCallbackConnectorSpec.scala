@@ -24,6 +24,7 @@ import uk.gov.hmrc.disareturnstestsupportapi.connectors.DisaReturnsCallbackConne
 import uk.gov.hmrc.disareturnstestsupportapi.models.callback.CallbackResponse
 import uk.gov.hmrc.http.{HttpResponse, StringContextOps, UpstreamErrorResponse}
 import utils.BaseUnitSpec
+import utils.TestConstants.validZReference
 
 import scala.concurrent.Future
 
@@ -37,7 +38,7 @@ class DisaReturnsCallbackConnectorSpec extends BaseUnitSpec {
     )
     val connector = new DisaReturnsCallbackConnector(mockAppConfig, mockHttpClient, retryConfig, system)
 
-    val zref         = "Z1234"
+    val zref         = validZReference
     val totalRecords = 42
     val testUrl      = "http://localhost:1200"
 

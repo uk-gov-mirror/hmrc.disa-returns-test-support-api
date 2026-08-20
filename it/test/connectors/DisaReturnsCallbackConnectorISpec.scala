@@ -22,10 +22,11 @@ import play.api.test.Helpers.await
 import uk.gov.hmrc.disareturnstestsupportapi.connectors.DisaReturnsCallbackConnector
 import uk.gov.hmrc.disareturnstestsupportapi.models.callback.CallbackResponse
 import utils.BaseIntegrationSpec
+import utils.TestConstants.validZReference
 
 class DisaReturnsCallbackConnectorISpec extends BaseIntegrationSpec {
 
-  private val zRef         = "Z1234"
+  private val zRef         = validZReference
   private val callbackPath = s"/callback/monthly/$zRef"
 
   private lazy val connector = app.injector.instanceOf[DisaReturnsCallbackConnector]

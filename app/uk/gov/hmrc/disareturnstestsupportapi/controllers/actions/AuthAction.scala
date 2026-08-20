@@ -37,7 +37,8 @@ import play.api.libs.json.Json
 import play.api.mvc.Results.{InternalServerError, Unauthorized}
 import play.api.mvc._
 import uk.gov.hmrc.auth.core.AffinityGroup.Organisation
-import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.authorisedEnrolments
+import uk.gov.hmrc.auth.core.retrieve.~
+import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.{authorisedEnrolments, credentials}
 import uk.gov.hmrc.auth.core.{AuthConnector, AuthorisationException, AuthorisedFunctions, Enrolment, InternalError}
 import uk.gov.hmrc.disareturnstestsupportapi.models.errors.{InternalServerErr, UnauthorisedErr}
 import uk.gov.hmrc.http.HeaderCarrier
@@ -56,31 +57,40 @@ class AuthAction @Inject() (ac: AuthConnector, cc: ControllerComponents)(implici
   private val enrolmentKey  = "HMRC-DISA-ORG"
   private val identifierKey = "ZREF"
 
-  def apply(zRef: String): ActionBuilder[Request, AnyContent] =
-    new ActionBuilder[Request, AnyContent] with Logging {
+  def apply(zRef: String): ActionBuilder[AuthenticatedRequest, AnyContent] =
+    new ActionBuilder[AuthenticatedRequest, AnyContent] with Logging {
 
       override def parser:                     BodyParser[AnyContent] = cc.parsers.defaultBodyParser
       override protected def executionContext: ExecutionContext       = cc.executionContext
 
-      override def invokeBlock[A](request: Request[A], block: Request[A] => Future[Result]): Future[Result] = {
+      override def invokeBlock[A](
+        request: Request[A],
+        block:   AuthenticatedRequest[A] => Future[Result]
+      ): Future[Result] = {
         implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
 
-        auth.authorised(Organisation and Enrolment(enrolmentKey)).retrieve(authorisedEnrolments) { enrolments =>
-          val zRefMatchesEnrolment = enrolments
-            .getEnrolment(enrolmentKey)
-            .fold(false)(_.getIdentifier(identifierKey).exists(_.value == zRef))
+        auth
+          .authorised(Organisation and Enrolment(enrolmentKey))
+          .retrieve(authorisedEnrolments and credentials) { case enrolments ~ maybeCredentials =>
+            val zRefMatchesEnrolment = enrolments
+              .getEnrolment(enrolmentKey)
+              .fold(false)(_.getIdentifier(identifierKey).exists(_.value == zRef))
 
-          if (zRefMatchesEnrolment) block(request)
-          else throw InternalError("Z-Ref does not match enrolment.")
-        } recover {
-          case ex: AuthorisationException =>
-            logger.warn(s"[AuthAction][invokeBlock] Authorization failed. Error: ${ex.reason}")
-            Unauthorized(Json.toJson(UnauthorisedErr(message = s"${ex.reason}")))
+            (zRefMatchesEnrolment, maybeCredentials) match {
+              case (true, Some(userCredentials)) => block(AuthenticatedRequest(request, userCredentials.providerId))
+              case (false, _)                    => throw InternalError("Z-Ref does not match enrolment.")
+              case (_, None)                     => throw InternalError("Credential ID not found.")
+            }
+          }
+          .recover {
+            case ex: AuthorisationException =>
+              logger.warn(s"[AuthAction][invokeBlock] Authorization failed. Error: ${ex.reason}")
+              Unauthorized(Json.toJson(UnauthorisedErr(message = s"${ex.reason}")))
 
-          case ex =>
-            logger.warn(s"[AuthAction][invokeBlock] Auth request failed with unexpected exception: $ex")
-            InternalServerError(Json.toJson(InternalServerErr()))
-        }
+            case ex =>
+              logger.warn(s"[AuthAction][invokeBlock] Auth request failed with unexpected exception: $ex")
+              InternalServerError(Json.toJson(InternalServerErr()))
+          }
       }
     }
 }

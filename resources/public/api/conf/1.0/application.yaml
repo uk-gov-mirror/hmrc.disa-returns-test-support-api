@@ -5,8 +5,7 @@ info:
   title: ISA Returns Test Support
   description: |
     # Overview
-    Use this API to trigger the generation of a test reconciliation report for the ISA Returns API. 
-    It supports integration testing of reconciliation handling in the sandbox environment.
+    Use this API to configure scenarios for the ISA Returns API, including test reconciliation reports and reporting-window overrides.
 
     # Integration requirements
     - REST API using JSON over HTTPS.
@@ -27,10 +26,69 @@ tags:
   - name: Test reconciliation
     description: |
       Generate test reconciliation reports for the ISA Returns API to support integration testing in the sandbox environment.
+  - name: Reporting window
+    description: Configure a temporary reporting window for the authenticated user.
 
 #      Open Question - since we can reasonably assume they might want to be more specific, what does that endpoint look like?
 
 paths:
+  /monthly/{zReference}/reporting-window-override:
+    put:
+      summary: Override the reporting window
+      description: |
+        Configure a reporting window for the authenticated user. The override lasts for one hour and replaces any existing override for that user.
+
+        This operation does not change the system clock. When the override expires, normal reporting-period validation resumes.
+      operationId: setReportingWindowOverride
+      tags:
+        - Reporting window
+      security:
+        - userRestricted:
+            - write:isa-returns
+      parameters:
+        - name: zReference
+          in: path
+          description: "A unique identifier assigned by HMRC to each approved ISA manager. Format: 'Zxxxx'."
+          required: true
+          schema:
+            pattern: ^[zZ][0-9]{4}$
+            type: string
+            example: Z1234
+        - $ref: '#/components/parameters/acceptHeader'
+        - $ref: '#/components/parameters/authorizationHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/reportingWindowOverride'
+            example:
+              startDate: '2026-08-13T00:00:00Z'
+              endDate: '2026-08-31T23:59:59Z'
+      responses:
+        204:
+          description: Reporting-window override created or updated.
+        400:
+          description: The request contains malformed JSON, invalid timestamps, an invalid Z reference, or a start date after the end date.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/badSubmissionGeneral'
+                  - $ref: '#/components/schemas/badSubmissionComplex'
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/unauthorized'
+        500:
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/internalServerError'
+
   /monthly/{zReference}/reconciliation:
     post:
       summary: Generate test reconciliation report
@@ -149,6 +207,36 @@ components:
         type: string
       description: Bearer token for authentication.
   schemas:
+    reportingWindowOverride:
+      title: Reporting Window Override
+      type: object
+      required: [startDate, endDate]
+      properties:
+        startDate:
+          type: string
+          format: date-time
+          description: Inclusive start of the reporting window. Must not be after endDate.
+        endDate:
+          type: string
+          format: date-time
+          description: Inclusive end of the reporting window.
+    unauthorized:
+      type: object
+      properties:
+        code:
+          type: string
+          enum: [UNAUTHORIZED]
+        message:
+          type: string
+    internalServerError:
+      type: object
+      properties:
+        code:
+          type: string
+          enum: [INTERNAL_SERVER_ERROR]
+        message:
+          type: string
+          example: There has been an issue processing your request
     reportDescriptionSimple:
       title: Report Description (Simple)
       type: object

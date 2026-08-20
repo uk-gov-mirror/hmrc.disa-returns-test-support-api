@@ -19,6 +19,7 @@ package uk.gov.hmrc.disareturnstestsupportapi.connectors
 import com.typesafe.config.Config
 import org.apache.pekko.actor.ActorSystem
 import play.api.Logging
+import play.api.http.HeaderNames.AUTHORIZATION
 import play.api.http.Status.{BAD_REQUEST, NO_CONTENT}
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat.oFormatFromReadsAndOWrites
@@ -47,12 +48,12 @@ class GenerateReportConnector @Inject() (
     zRef:        String
   )(implicit hc: HeaderCarrier): Future[GenerateReportResult] = {
 
-    val url = url"${config.disaReturnsStubsBaseUrl}/test-only/$zRef/reconciliation"
+    val url = url"${config.disaReturnsStubsBaseUrl}/monthly/$zRef/reconciliation"
     retryFor[HttpResponse]("generate reconciliation report")(retryCondition) {
       httpClient
         .post(url)
         .withBody(Json.toJson(body))
-        .setHeader("Authorization" -> s"Bearer")
+        .setHeader(AUTHORIZATION -> s"Bearer")
         .executeOrFail
     }
       .map { response =>

@@ -18,16 +18,17 @@ package models.common
 
 import uk.gov.hmrc.disareturnstestsupportapi.models.validators.IsaRefValidator
 import utils.BaseUnitSpec
+import utils.TestConstants.validZReference
 
 class IsaRefValidatorSpec extends BaseUnitSpec {
 
   "IsaRefValidator.isValid" should {
 
     "return true for valid ZRef format" in {
-      IsaRefValidator.isValid("Z1234") shouldBe true
-      IsaRefValidator.isValid("Z0000") shouldBe true
-      IsaRefValidator.isValid("Z9999") shouldBe true
-      IsaRefValidator.isValid("z1234") shouldBe true
+      IsaRefValidator.isValid(validZReference) shouldBe true
+      IsaRefValidator.isValid("Z0000")         shouldBe true
+      IsaRefValidator.isValid("Z9999")         shouldBe true
+      IsaRefValidator.isValid("z1234")         shouldBe true
     }
 
     "return false for missing Z prefix" in {

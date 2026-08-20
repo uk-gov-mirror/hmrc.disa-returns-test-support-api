@@ -18,6 +18,8 @@ package controllers
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.http.Fault
+import play.api.http.HeaderNames.{AUTHORIZATION, CONTENT_TYPE}
+import play.api.http.MimeTypes.JSON
 import play.api.http.Status.{BAD_REQUEST, INTERNAL_SERVER_ERROR, NO_CONTENT, UNAUTHORIZED}
 import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws.WSResponse
@@ -25,10 +27,11 @@ import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import play.api.libs.ws.DefaultBodyWritables.writeableOf_String
 import play.api.test.Helpers.await
 import utils.BaseIntegrationSpec
+import utils.TestConstants.{bearerToken, validZReference}
 
 class GenerateReportControllerISpec extends BaseIntegrationSpec {
 
-  val zRef        = "Z1234"
+  val zRef        = validZReference
   val invalidZRef = "1234"
 
   val validJsonBody: String =
@@ -228,7 +231,7 @@ class GenerateReportControllerISpec extends BaseIntegrationSpec {
     await(
       ws.url(
         s"http://localhost:$port/monthly/$zRef/reconciliation"
-      ).withHttpHeaders("Authorization" -> "Bearer 1234")
+      ).withHttpHeaders(AUTHORIZATION -> bearerToken)
         .withFollowRedirects(follow = false)
         .post(body)
     )
@@ -241,8 +244,8 @@ class GenerateReportControllerISpec extends BaseIntegrationSpec {
       ws.url(
         s"http://localhost:$port/monthly/$zRef/reconciliation"
       ).withHttpHeaders(
-        "Authorization" -> "Bearer 1234",
-        "Content-Type"  -> "application/json"
+        AUTHORIZATION -> bearerToken,
+        CONTENT_TYPE  -> JSON
       ).withFollowRedirects(follow = false)
         .post(body)
     )

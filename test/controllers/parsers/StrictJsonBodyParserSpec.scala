@@ -17,6 +17,8 @@
 package controllers.parsers
 
 import org.apache.pekko.util.ByteString
+import play.api.http.HeaderNames.CONTENT_TYPE
+import play.api.http.MimeTypes.JSON
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
@@ -33,7 +35,7 @@ class StrictJsonBodyParserSpec extends BaseUnitSpec {
   "StrictJsonBodyParser" should {
 
     "return BadRequest with EmptyPayload when request body is empty" in {
-      val request = FakeRequest("POST", "/").withHeaders("Content-Type" -> "application/json")
+      val request = FakeRequest("POST", "/").withHeaders(CONTENT_TYPE -> JSON)
       val result  = await(parser(request).run())
 
       result.isLeft shouldBe true
@@ -43,7 +45,7 @@ class StrictJsonBodyParserSpec extends BaseUnitSpec {
     }
 
     "return BadRequest with EmptyPayload when request body is whitespace only" in {
-      val request = FakeRequest("POST", "/").withHeaders("Content-Type" -> "application/json")
+      val request = FakeRequest("POST", "/").withHeaders(CONTENT_TYPE -> JSON)
       val result  = await(parser(request).run(ByteString("   \n\t  ")))
 
       result.isLeft shouldBe true
@@ -53,7 +55,7 @@ class StrictJsonBodyParserSpec extends BaseUnitSpec {
     }
 
     "return BadRequest with MalformedJsonFailureErr when request body is malformed JSON" in {
-      val request = FakeRequest("POST", "/").withHeaders("Content-Type" -> "application/json")
+      val request = FakeRequest("POST", "/").withHeaders(CONTENT_TYPE -> JSON)
       val result  = await(parser(request).run(ByteString("""{"oversubscribed": MALFORMED}""")))
 
       result.isLeft shouldBe true
@@ -63,7 +65,7 @@ class StrictJsonBodyParserSpec extends BaseUnitSpec {
     }
 
     "parse valid JSON into JsValue" in {
-      val request = FakeRequest("POST", "/").withHeaders("Content-Type" -> "application/json")
+      val request = FakeRequest("POST", "/").withHeaders(CONTENT_TYPE -> JSON)
       val result  = await(parser(request).run(ByteString("""{"oversubscribed": 1}""")))
 
       result match {
