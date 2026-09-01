@@ -27,7 +27,7 @@ tags:
     description: |
       Generate test reconciliation reports for the ISA Returns API to support integration testing in the sandbox environment.
   - name: Reporting window
-    description: Configure a temporary reporting window for the authenticated user.
+    description: Configure a temporary reporting window for the authenticated Z-reference.
 
 #      Open Question - since we can reasonably assume they might want to be more specific, what does that endpoint look like?
 
@@ -36,7 +36,7 @@ paths:
     put:
       summary: Override the reporting window
       description: |
-        Configure a reporting window for the authenticated user. The override lasts for one hour and replaces any existing override for that user.
+        Configure a reporting window for the authenticated Z-reference. The override lasts for one hour and replaces any existing override for that Z-reference.
 
         This operation does not change the system clock. When the override expires, normal reporting-period validation resumes.
       operationId: setReportingWindowOverride

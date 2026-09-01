@@ -24,7 +24,7 @@ import uk.gov.hmrc.disareturnstestsupportapi.connectors.ReportingWindowOverrideC
 import uk.gov.hmrc.disareturnstestsupportapi.models.ReportingWindowOverrideRequest
 import uk.gov.hmrc.http.{HttpResponse, StringContextOps, UpstreamErrorResponse}
 import utils.BaseUnitSpec
-import utils.TestConstants.{reportingWindowEnd, reportingWindowStart, testCredentialId}
+import utils.TestConstants.{reportingWindowEnd, reportingWindowStart, validZReference}
 
 import scala.concurrent.Future
 
@@ -40,9 +40,8 @@ class ReportingWindowOverrideConnectorSpec extends BaseUnitSpec {
     val request   = ReportingWindowOverrideRequest(reportingWindowStart, reportingWindowEnd)
 
     when(mockAppConfig.disaReturnsStubsBaseUrl).thenReturn(baseUrl)
-    when(mockHttpClient.put(url"$baseUrl/reporting-window-override")).thenReturn(mockRequestBuilder)
+    when(mockHttpClient.put(url"$baseUrl/reporting-window-override/$validZReference")).thenReturn(mockRequestBuilder)
     when(mockRequestBuilder.withBody(any())(any(), any(), any())).thenReturn(mockRequestBuilder)
-    when(mockRequestBuilder.setHeader("X-Cred-Id" -> testCredentialId)).thenReturn(mockRequestBuilder)
   }
 
   "ReportingWindowOverrideConnector.setOverride" should {
@@ -50,14 +49,14 @@ class ReportingWindowOverrideConnectorSpec extends BaseUnitSpec {
       when(mockRequestBuilder.execute[Either[UpstreamErrorResponse, HttpResponse]](any(), any()))
         .thenReturn(Future.successful(Right(HttpResponse(NO_CONTENT, ""))))
 
-      connector.setOverride(request, testCredentialId).futureValue shouldBe true
+      connector.setOverride(request, validZReference).futureValue shouldBe true
     }
 
     "return false when the stub returns another successful status" in new TestSetup {
       when(mockRequestBuilder.execute[Either[UpstreamErrorResponse, HttpResponse]](any(), any()))
         .thenReturn(Future.successful(Right(HttpResponse(OK, ""))))
 
-      connector.setOverride(request, testCredentialId).futureValue shouldBe false
+      connector.setOverride(request, validZReference).futureValue shouldBe false
     }
 
     "retry server errors and return false" in new TestSetup {
@@ -65,7 +64,7 @@ class ReportingWindowOverrideConnectorSpec extends BaseUnitSpec {
       when(mockRequestBuilder.execute[Either[UpstreamErrorResponse, HttpResponse]](any(), any()))
         .thenReturn(Future.successful(Left(error)))
 
-      connector.setOverride(request, testCredentialId).futureValue shouldBe false
+      connector.setOverride(request, validZReference).futureValue shouldBe false
       verify(mockRequestBuilder, times(4)).execute[Either[UpstreamErrorResponse, HttpResponse]](any(), any())
     }
   }

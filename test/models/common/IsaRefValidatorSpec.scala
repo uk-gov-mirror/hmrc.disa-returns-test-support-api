@@ -34,6 +34,7 @@ class IsaRefValidatorSpec extends BaseUnitSpec {
     "return false for missing Z prefix" in {
       IsaRefValidator.isValid("1234")  shouldBe false
       IsaRefValidator.isValid("A1234") shouldBe false
+      IsaRefValidator.isValid("|1234") shouldBe false
     }
 
     "return false for incorrect length" in {

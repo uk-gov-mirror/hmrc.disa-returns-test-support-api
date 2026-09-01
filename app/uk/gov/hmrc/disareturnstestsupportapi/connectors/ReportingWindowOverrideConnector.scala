@@ -39,14 +39,13 @@ class ReportingWindowOverrideConnector @Inject() (
     extends BaseConnector
     with Logging {
 
-  def setOverride(body: ReportingWindowOverrideRequest, credId: String)(implicit hc: HeaderCarrier): Future[Boolean] = {
-    val url = url"${config.disaReturnsStubsBaseUrl}/reporting-window-override"
+  def setOverride(body: ReportingWindowOverrideRequest, zRef: String)(implicit hc: HeaderCarrier): Future[Boolean] = {
+    val url = url"${config.disaReturnsStubsBaseUrl}/reporting-window-override/$zRef"
 
     retryFor[HttpResponse]("set reporting window override")(retryCondition) {
       httpClient
         .put(url)
         .withBody(Json.toJson(body))
-        .setHeader("X-Cred-Id" -> credId)
         .executeOrFail
     }.map(_.status == NO_CONTENT)
       .recover { case error: UpstreamErrorResponse =>

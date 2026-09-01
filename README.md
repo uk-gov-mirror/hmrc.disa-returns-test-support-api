@@ -23,15 +23,15 @@ The link provided in the return summary via the callback can then be utilised to
 
 | Path | Method | Auth          | Purpose                                                               |
 |---|---|---------------|-----------------------------------------------------------------------|
-| `/monthly/:zRef/reconciliation` | **POST** | *X-Client-ID* | Simulate NPS reconciliation report generation for a given ZREF.       |
-| `/monthly/:zRef/reporting-window-override` | **PUT** | OAuth bearer token | Temporarily override the reporting window for the authenticated user. |
+| `/monthly/:zReference/reconciliation` | **POST** | OAuth bearer token | Simulate NPS reconciliation report generation for a given Z-reference. |
+| `/monthly/:zReference/reporting-window-override` | **PUT** | OAuth bearer token | Temporarily override the reporting window for the authenticated Z-reference. |
 
 
 #### Path parameters
 
 | Name | Type |   Example | Description | Constraints        |
 |---|---|----------:|---|--------------------|
-| `zRef` | `string` |   `Z1234` | ISA Manager reference for the return. | `^[z\|Z][0-9]{4}$` |
+| `zReference` | `string` |   `Z1234` | ISA Manager reference for the return. | `^[zZ][0-9]{4}$` |
 
 #### Request body
 
@@ -47,9 +47,9 @@ case class GenerateReportRequest(
 
 ### Override the reporting window
 
-This endpoint enables an authenticated user to test the monthly returns journey outside a live reporting period.
+This endpoint enables an ISA manager for a Z-reference to test the monthly returns journey outside a live reporting period.
 
-The override is associated with the credential ID obtained from the caller's authenticated session. It only affects that user and replaces any override they previously configured.
+The override is associated with a Z-reference. It replaces any override previously configured for that Z-reference.
 
 ```http
 PUT /monthly/Z1234/reporting-window-override

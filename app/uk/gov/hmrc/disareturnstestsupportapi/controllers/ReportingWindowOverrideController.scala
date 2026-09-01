@@ -19,7 +19,7 @@ package uk.gov.hmrc.disareturnstestsupportapi.controllers
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
 import uk.gov.hmrc.disareturnstestsupportapi.connectors.ReportingWindowOverrideConnector
-import uk.gov.hmrc.disareturnstestsupportapi.controllers.actions.{AuthAction, AuthenticatedRequest}
+import uk.gov.hmrc.disareturnstestsupportapi.controllers.actions.AuthAction
 import uk.gov.hmrc.disareturnstestsupportapi.controllers.parsers.StrictJsonBodyParser
 import uk.gov.hmrc.disareturnstestsupportapi.models.ReportingWindowOverrideRequest
 import uk.gov.hmrc.disareturnstestsupportapi.models.errors.{ErrorResponse, InternalServerErr, InvalidZref}
@@ -50,10 +50,10 @@ class ReportingWindowOverrideController @Inject() (
         authAction(validZRef)
           .invokeBlock(
             request,
-            (authenticatedRequest: AuthenticatedRequest[JsValue]) => {
+            (authenticatedRequest: Request[JsValue]) => {
               implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(authenticatedRequest)
               reportingWindowOverrideConnector
-                .setOverride(overrideRequest, authenticatedRequest.credId)
+                .setOverride(overrideRequest, validZRef)
                 .map {
                   case true  => NoContent
                   case false => InternalServerError(Json.toJson(InternalServerErr()))

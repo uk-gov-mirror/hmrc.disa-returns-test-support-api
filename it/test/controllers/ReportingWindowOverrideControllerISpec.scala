@@ -22,17 +22,17 @@ import play.api.libs.json.Json
 import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import play.api.test.Helpers.await
 import utils.BaseIntegrationSpec
-import utils.TestConstants.{bearerToken, reportingWindowEnd, reportingWindowStart, testCredentialId, validZReference}
+import utils.TestConstants.{bearerToken, reportingWindowEnd, reportingWindowStart, validZReference}
 
 class ReportingWindowOverrideControllerISpec extends BaseIntegrationSpec {
 
   "PUT /monthly/:zRef/reporting-window-override" should {
-    "forward a valid override using the authenticated credential ID" in {
-      stubAuth(credId = testCredentialId)
-      stubReportingWindowOverride(aResponse().withStatus(204), testCredentialId)
+    "forward a valid override using the uppercase Z-reference" in {
+      stubAuth()
+      stubReportingWindowOverride(aResponse().withStatus(204), validZReference)
 
       val response = await(
-        ws.url(s"http://localhost:$port/monthly/$validZReference/reporting-window-override")
+        ws.url(s"http://localhost:$port/monthly/${validZReference.toLowerCase}/reporting-window-override")
           .withHttpHeaders(AUTHORIZATION -> bearerToken)
           .put(
             Json.obj(

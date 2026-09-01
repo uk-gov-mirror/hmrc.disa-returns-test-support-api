@@ -26,7 +26,7 @@ import play.api.test.Helpers.{BAD_REQUEST, INTERNAL_SERVER_ERROR, NO_CONTENT, PU
 import uk.gov.hmrc.disareturnstestsupportapi.controllers.ReportingWindowOverrideController
 import uk.gov.hmrc.disareturnstestsupportapi.models.ReportingWindowOverrideRequest
 import utils.BaseUnitSpec
-import utils.TestConstants.{reportingWindowEnd, reportingWindowStart, testCredentialId, validZReference}
+import utils.TestConstants.{reportingWindowEnd, reportingWindowStart, validZReference}
 
 import scala.concurrent.Future
 
@@ -39,9 +39,9 @@ class ReportingWindowOverrideControllerSpec extends BaseUnitSpec {
   )
 
   "ReportingWindowOverrideController.set" should {
-    "store the override for the authenticated credential" in {
-      authorizationForZRef(credId = testCredentialId)
-      when(mockReportingWindowOverrideConnector.setOverride(any(), eqTo(testCredentialId))(any()))
+    "store the override using the validated uppercase Z-reference" in {
+      authorizationForZRef()
+      when(mockReportingWindowOverrideConnector.setOverride(any(), eqTo(validZReference))(any()))
         .thenReturn(Future.successful(true))
 
       val result = controller.set("z1234")(
@@ -58,7 +58,7 @@ class ReportingWindowOverrideControllerSpec extends BaseUnitSpec {
             reportingWindowEnd
           )
         ),
-        eqTo(testCredentialId)
+        eqTo(validZReference)
       )(any())
     }
 

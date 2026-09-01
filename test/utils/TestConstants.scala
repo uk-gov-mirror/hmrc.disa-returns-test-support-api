@@ -19,9 +19,8 @@ package utils
 import java.time.Instant
 
 object TestConstants {
-  val validZReference:  String = "Z1234"
-  val testCredentialId: String = "cred-id"
-  val bearerToken:      String = "Bearer 1234"
+  val validZReference: String = "Z1234"
+  val bearerToken:     String = "Bearer 1234"
 
   val reportingWindowStart: Instant = Instant.parse("2026-08-13T00:00:00Z")
   val reportingWindowEnd:   Instant = Instant.parse("2026-08-31T23:59:59Z")
